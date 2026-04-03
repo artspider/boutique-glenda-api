@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: boutique_glenda_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: boutique_glenda
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - boutique_glenda_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  boutique_glenda_postgres_data:
