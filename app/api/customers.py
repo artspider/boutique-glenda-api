@@ -5,6 +5,8 @@ from app.db.session import get_db
 from app.schemas.customer_create import CustomerCreate
 from app.models.customer import Customer
 from app.schemas.customer_update import CustomerUpdate
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter()
 
@@ -24,7 +26,7 @@ def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)):
     return customer
 
 @router.get("/customers/{customer_id}")
-def get_customer(customer_id: int, db: Session = Depends(get_db)):
+def get_customer(customer_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
     customer = db.get(Customer, customer_id)
     return customer
 

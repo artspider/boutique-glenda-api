@@ -10,6 +10,8 @@ from app.schemas.product_create import ProductCreate
 from typing import List
 from app.schemas.product_response import ProductResponse
 from app.schemas.product_update import ProductUpdate
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter(
     prefix="/products",
@@ -56,8 +58,8 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
         "minimum_stock": db_product.minimum_stock
     }
 
-@router.get("/", response_model=List[ProductResponse])
-def list_products(db: Session = Depends(get_db)):
+@router.get("/", response_model=List[ProductResponse], )
+def list_products(db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
     products = db.query(Product).all()
     return products
 
@@ -105,7 +107,7 @@ def update_product(
         "minimum_stock": db_product.minimum_stock
     }
 
-from fastapi import HTTPException
+
 
 @router.delete("/{product_id}", response_model=dict)
 def delete_product(
