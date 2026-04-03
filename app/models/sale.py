@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
-from app.db.base import Base
+from app.db.base_class import Base
 
 
 class Sale(Base):
