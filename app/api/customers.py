@@ -26,3 +26,8 @@ def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)):
 def get_customer(customer_id: int, db: Session = Depends(get_db)):
     customer = db.get(Customer, customer_id)
     return customer
+
+@router.get("/customers")
+def list_customers(db: Session = Depends(get_db)):
+    customers = db.query(Customer).all()
+    return customers
