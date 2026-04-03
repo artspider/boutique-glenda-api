@@ -1,0 +1,16 @@
+from pydantic import BaseModel
+from typing import Optional
+
+class ProductResponse(BaseModel):
+    id: int
+    name: str
+    sku: str
+    description: Optional[str]
+    cost_price: float
+    sale_price: float
+    stock: int
+    minimum_stock: int
+    category_id: Optional[int]
+
+    class Config:
+        orm_mode = True
