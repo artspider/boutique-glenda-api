@@ -21,3 +21,8 @@ def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)):
     db.refresh(customer)
 
     return customer
+
+@router.get("/customers/{customer_id}")
+def get_customer(customer_id: int, db: Session = Depends(get_db)):
+    customer = db.get(Customer, customer_id)
+    return customer
