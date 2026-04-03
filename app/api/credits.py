@@ -5,11 +5,41 @@ from app.db.session import get_db
 from app.models.credit import Credit
 from app.core.security import get_current_user
 from app.models.user import User
+from app.models.payment_schedule import PaymentSchedule
 
-router = APIRouter()
+router = APIRouter(prefix="/credits", tags=["credits"])
 
+@router.get("/active")
+def get_active_credits(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    credits = db.query(Credit).filter(Credit.balance > 0).all()
+    return credits
 
-@router.get("/credits/{credit_id}")
+@router.get("/upcoming-payments")
+def get_upcoming_payments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    payments = (
+        db.query(PaymentSchedule)
+        .filter(PaymentSchedule.status == "pending")
+        .order_by(PaymentSchedule.due_date.asc())
+        .all()
+    )
+    return payments
+
+@router.get("/{credit_id}")
 def get_credit(credit_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
     credit = db.get(Credit, credit_id)
     return credit
+
+@router.get("/")
+def list_credits(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    credits = db.query(Credit).all()
+    return credits
+
