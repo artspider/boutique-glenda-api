@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.credit import Credit
 from app.schemas.customer_response import CustomerResponse
 from app.schemas.customer_response import CustomerResponse, CustomerListItem
+from app.schemas.customer_account_response import CustomerAccountResponse
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -68,11 +69,11 @@ def delete_customer(customer_id: int, db: Session = Depends(get_db)):
 
     return customer
 
-@router.get("/{customer_id}/account")
+@router.get("/{customer_id}/account", response_model=CustomerAccountResponse)
 def get_customer_account(
-    customer_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+        customer_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
 ):
     customer = db.get(Customer, customer_id)
     credits = db.query(Credit).filter(Credit.customer_id == customer_id).all()
