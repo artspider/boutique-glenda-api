@@ -8,6 +8,8 @@ from app.models.product import Product
 from app.schemas.inventory import InventoryStockResponse
 from app.models.inventory_movement import InventoryMovement
 from app.schemas.inventory import InventoryMovementResponse
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -16,7 +18,11 @@ def test_inventory():
     return {"message": "inventory module working"}
 
 @router.get("/products/{product_id}/stock", response_model=InventoryStockResponse)
-def get_product_stock(product_id: int, db: Session = Depends(get_db)):
+def get_product_stock(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     product = db.query(Product).filter(Product.id == product_id).first()
 
     if not product:
