@@ -65,7 +65,11 @@ def update_customer(
     return customer
 
 @router.delete("/{customer_id}")
-def delete_customer(customer_id: int, db: Session = Depends(get_db)):
+def delete_customer(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     customer = db.get(Customer, customer_id)
     customer.is_active = False
 
