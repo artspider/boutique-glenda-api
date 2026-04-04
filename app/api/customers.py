@@ -16,7 +16,11 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 
 
 @router.post("/")
-def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)):
+def create_customer(
+        payload: CustomerCreate,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
+):
     customer = Customer(
         first_name=payload.first_name,
         last_name=payload.last_name,
