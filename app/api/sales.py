@@ -4,11 +4,19 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.sale_create import SaleCreate
 from app.services.sale_service import SaleService
+from app.models.user import User
+from app.core.security import get_current_user
+
+
 
 router = APIRouter()
 
 
 @router.post("/sales")
-def create_sale(payload: SaleCreate, db: Session = Depends(get_db)):
+def create_sale(
+    payload: SaleCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     service = SaleService(db)
     return service.create_sale(payload)
