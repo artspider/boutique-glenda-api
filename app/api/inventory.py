@@ -36,12 +36,19 @@ def get_product_stock(
     )
 
 @router.get("/movements", response_model=list[InventoryMovementResponse])
-def get_inventory_movements(db: Session = Depends(get_db)):
+def get_inventory_movements(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     movements = db.query(InventoryMovement).order_by(InventoryMovement.id.desc()).all()
     return movements
 
 @router.get("/products/{product_id}/movements", response_model=list[InventoryMovementResponse])
-def get_product_movements(product_id: int, db: Session = Depends(get_db)):
+def get_product_movements(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     movements = (
         db.query(InventoryMovement)
         .filter(InventoryMovement.product_id == product_id)
