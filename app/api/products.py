@@ -117,7 +117,8 @@ def update_product(
 @router.delete("/{product_id}", response_model=dict)
 def delete_product(
     product_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     db_product = db.query(Product).filter(Product.id == product_id).first()
     if not db_product:
