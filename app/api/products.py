@@ -71,7 +71,8 @@ def list_products(db: Session = Depends(get_db), current_user: User = Depends(ge
 def update_product(
     product_id: int,
     product: ProductUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     db_product = db.query(Product).filter(Product.id == product_id).first()
     if not db_product:
