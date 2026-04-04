@@ -21,7 +21,11 @@ router = APIRouter(
 from app.schemas.product_create import ProductCreate
 
 @router.post("/", response_model=dict)
-def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+def create_product(
+    product: ProductCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
 
     # Generar SKU si no se proporciona
     sku = product.sku
