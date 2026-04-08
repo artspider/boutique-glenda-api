@@ -1,25 +1,23 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+//import { useNavigate } from 'react-router-dom'
 import { loginUser } from '../services/authService'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  event.preventDefault()
 
-    try {
-      const data = await loginUser({ email, password })
-      localStorage.setItem('access_token', data.access_token)
-      console.log('Login exitoso:', data)
-      navigate('/')
-    } catch (error) {
-      console.error('Error en login:', error)
-    }
+  try {
+    await loginUser({ email, password })
+    window.location.href = '/app'
+  } catch (error) {
+    console.error('Error en login:', error)
   }
+}
 
   return (
     <main>

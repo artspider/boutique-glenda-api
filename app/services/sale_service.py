@@ -209,3 +209,6 @@ class SaleService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La frecuencia de pago debe ser: weekly, biweekly o monthly."
             )
+
+    def get_sales(self):
+        return self.db.query(Sale).order_by(Sale.created_at.desc()).all()
