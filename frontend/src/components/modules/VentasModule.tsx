@@ -6,6 +6,10 @@ import type { Product } from '../../services/productService';
 import { createSale } from '../../services/saleService';
 import SalesSectionCard from './sales/SalesSectionCard';
 
+/* =========================================================
+   TIPOS DEL MÓDULO
+========================================================= */
+
 type SaleItemForm = {
   product_id: number | '';
   quantity: number;
@@ -13,6 +17,14 @@ type SaleItemForm = {
 
 type SaleType = 'immediate' | 'installments';
 
+/* =========================================================
+   HELPERS / UTILIDADES
+========================================================= */
+
+/**
+ * Formatea números como moneda MXN para mostrar importes
+ * de forma consistente en toda la interfaz.
+ */
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
@@ -21,7 +33,15 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+/* =========================================================
+   COMPONENTE PRINCIPAL
+========================================================= */
+
 const VentasModule: React.FC = () => {
+  /* =========================================================
+     ESTADOS PRINCIPALES DEL MÓDULO
+  ========================================================= */
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +66,15 @@ const VentasModule: React.FC = () => {
     credit: '',
   });
 
+  /* =========================================================
+     FUNCIONES DE CARGA DE DATOS
+  ========================================================= */
+
+  /**
+   * Carga clientes y productos necesarios para construir la venta.
+   * Mantiene el módulo aislado del historial de ventas, ya que este
+   * flujo ahora se enfoca únicamente en registrar una venta.
+   */
   const fetchData = async () => {
     try {
       const [customersData, productsData] = await Promise.all([
@@ -63,14 +92,28 @@ const VentasModule: React.FC = () => {
     }
   };
 
+  /* =========================================================
+     FUNCIONES DE MANEJO DEL CARRITO / ITEMS DE VENTA
+  ========================================================= */
+
+  /**
+   * Agrega una nueva fila vacía de producto al formulario de venta.
+   */
   const addSaleItemRow = () => {
     setSaleItems((prev) => [...prev, { product_id: '', quantity: 1 }]);
   };
 
+  /**
+   * Elimina una fila de producto por índice.
+   */
   const removeSaleItemRow = (index: number) => {
     setSaleItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * Actualiza una propiedad específica de una fila de producto.
+   * Se usa para cambiar producto o cantidad sin romper el resto del item.
+   */
   const updateSaleItem = (
     index: number,
     field: keyof SaleItemForm,
@@ -88,11 +131,17 @@ const VentasModule: React.FC = () => {
     );
   };
 
+  /**
+   * Recupera el producto completo a partir de su id.
+   */
   const getProductById = (productId: number | '') => {
     if (productId === '') return null;
     return products.find((product) => product.id === productId) ?? null;
   };
 
+  /**
+   * Calcula el subtotal de una fila del carrito.
+   */
   const getItemSubtotal = (item: SaleItemForm) => {
     const product = getProductById(item.product_id);
 
@@ -101,23 +150,53 @@ const VentasModule: React.FC = () => {
     return product.sale_price * item.quantity;
   };
 
+  /* =========================================================
+     CÁLCULOS DERIVADOS IMPORTANTES
+  ========================================================= */
+
+  /**
+   * Total estimado de la venta.
+   */
   const saleTotal = saleItems.reduce((total, item) => {
     return total + getItemSubtotal(item);
   }, 0);
 
+  /**
+   * Nombre del cliente seleccionado para mostrarlo en el resumen.
+   */
   const selectedCustomerName = useMemo(() => {
     const customer = customers.find((item) => item.id === Number(formData.customer_id));
     if (!customer) return 'Sin cliente seleccionado';
     return `${customer.first_name} ${customer.last_name ?? ''}`.trim();
   }, [customers, formData.customer_id]);
 
+  /**
+   * Saldo financiado cuando la venta es a plazos.
+   */
   const financedBalance = Math.max(saleTotal - Number(formData.down_payment), 0);
 
+  /**
+   * Monto estimado por pago para ventas a plazos.
+   */
   const estimatedPaymentAmount =
     Number(formData.number_of_payments) > 0
       ? financedBalance / Number(formData.number_of_payments)
       : 0;
 
+  /**
+   * Cuenta solo los productos válidos seleccionados en el carrito.
+   */
+  const validItemsCount = saleItems.filter((item) => item.product_id !== '').length;
+
+  /* =========================================================
+     VALIDACIONES IMPORTANTES DEL MÓDULO
+  ========================================================= */
+
+  /**
+   * Valida el formulario completo antes de registrar la venta.
+   * Incluye validación de cliente, productos, cantidades, stock
+   * y reglas específicas cuando la venta es a plazos.
+   */
   const validateForm = () => {
     const errors = {
       customer_id: '',
@@ -177,10 +256,28 @@ const VentasModule: React.FC = () => {
     return !errors.customer_id && !errors.product_id && !errors.quantity && !errors.credit;
   };
 
+  /* =========================================================
+     EFECTOS DEL COMPONENTE
+  ========================================================= */
+
+  /**
+   * Carga inicial del módulo.
+   */
   useEffect(() => {
     fetchData();
   }, []);
 
+  /* =========================================================
+     FUNCIÓN PRINCIPAL DE REGISTRO DE VENTA
+  ========================================================= */
+
+  /**
+   * Construye el payload final y registra la venta contra el backend.
+   * Aquí hacemos el mapeo entre la semántica del frontend:
+   * - immediate / installments
+   * y el contrato actual del backend:
+   * - payment_type / is_credit
+   */
   const handleCreateSale = async () => {
     if (!validateForm()) return;
 
@@ -227,49 +324,17 @@ const VentasModule: React.FC = () => {
     }
   };
 
+  /* =========================================================
+     RENDER DEL MÓDULO
+  ========================================================= */
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '16px',
-          padding: '1.25rem 1.5rem',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '1rem',
-            flexWrap: 'wrap',
-          }}
-        >
-          <div>
-            <h2 style={{ margin: 0, color: '#0f172a' }}>Ventas</h2>
-            <p style={{ margin: '0.4rem 0 0 0', color: '#64748b' }}>
-              Registra una venta con pago inmediato o en plazos de forma clara y ordenada.
-            </p>
-          </div>
 
-          <button
-            onClick={handleCreateSale}
-            style={{
-              border: 'none',
-              borderRadius: '12px',
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              padding: '0.85rem 1.2rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Registrar venta
-          </button>
-        </div>
-      </div>
 
+      {/* =========================================================
+          INICIO — ESTADO DE CARGA
+      ========================================================= */}
       {loading && (
         <div
           style={{
@@ -282,7 +347,13 @@ const VentasModule: React.FC = () => {
           <p style={{ margin: 0, color: '#475569' }}>Cargando datos...</p>
         </div>
       )}
+      {/* =========================================================
+          FIN — ESTADO DE CARGA
+      ========================================================= */}
 
+      {/* =========================================================
+          INICIO — ESTADO DE ERROR
+      ========================================================= */}
       {error && (
         <div
           style={{
@@ -295,7 +366,13 @@ const VentasModule: React.FC = () => {
           <p style={{ margin: 0, color: '#b91c1c' }}>{error}</p>
         </div>
       )}
+      {/* =========================================================
+          FIN — ESTADO DE ERROR
+      ========================================================= */}
 
+      {/* =========================================================
+          INICIO — CONTENIDO PRINCIPAL DEL MÓDULO
+      ========================================================= */}
       {!loading && !error && (
         <div
           style={{
@@ -305,7 +382,13 @@ const VentasModule: React.FC = () => {
             alignItems: 'start',
           }}
         >
+          {/* =========================================================
+              INICIO — COLUMNA IZQUIERDA
+          ========================================================= */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* =========================================================
+                INICIO — APARTADO DATOS DE VENTA
+            ========================================================= */}
             <SalesSectionCard
               title="Datos de venta"
               subtitle="Selecciona el cliente y define cómo se liquidará la venta."
@@ -401,7 +484,13 @@ const VentasModule: React.FC = () => {
                 </div>
               </div>
             </SalesSectionCard>
+            {/* =========================================================
+                FIN — APARTADO DATOS DE VENTA
+            ========================================================= */}
 
+            {/* =========================================================
+                INICIO — APARTADO SELECCIÓN DE PRODUCTO
+            ========================================================= */}
             <SalesSectionCard
               title="Selección de producto"
               subtitle="Selecciona el producto que deseas agregar al carrito."
@@ -611,55 +700,168 @@ const VentasModule: React.FC = () => {
                 )}
               </div>
             </SalesSectionCard>
+            {/* =========================================================
+                FIN — APARTADO SELECCIÓN DE PRODUCTO
+            ========================================================= */}
 
+            {/* =========================================================
+                INICIO — APARTADO CARRITO DE VENTA
+            ========================================================= */}
             <SalesSectionCard
               title="Carrito de venta"
               subtitle="Revisa el detalle de los productos capturados."
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {saleItems.map((item, index) => {
-                  const selectedProduct = getProductById(item.product_id);
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <p style={{ margin: 0, color: '#64748b' }}>
+                    Productos listos para registrar en la venta.
+                  </p>
 
-                  return (
-                    <div
-                      key={index}
-                      style={{
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '14px',
-                        padding: '1rem',
-                        backgroundColor: '#ffffff',
-                      }}
-                    >
+                  <div
+                    style={{
+                      backgroundColor: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      color: '#1d4ed8',
+                      borderRadius: '999px',
+                      padding: '0.35rem 0.8rem',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {validItemsCount} producto{validItemsCount === 1 ? '' : 's'}
+                  </div>
+                </div>
+
+                {validItemsCount === 0 ? (
+                  <div
+                    style={{
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: '14px',
+                      padding: '1.2rem',
+                      backgroundColor: '#f8fafc',
+                    }}
+                  >
+                    <p style={{ margin: 0, color: '#64748b' }}>
+                      Aún no has seleccionado productos válidos para la venta.
+                    </p>
+                  </div>
+                ) : (
+                  saleItems.map((item, index) => {
+                    const selectedProduct = getProductById(item.product_id);
+
+                    if (!selectedProduct) return null;
+
+                    return (
                       <div
+                        key={index}
                         style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          gap: '1rem',
-                          flexWrap: 'wrap',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '14px',
+                          padding: '1rem',
+                          backgroundColor: '#ffffff',
                         }}
                       >
-                        <div>
-                          <strong style={{ color: '#0f172a' }}>
-                            {selectedProduct ? selectedProduct.name : 'Producto no seleccionado'}
-                          </strong>
-                          <p style={{ margin: '0.4rem 0 0 0', color: '#64748b' }}>
-                            Cantidad: {item.quantity}
-                          </p>
-                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            gap: '1rem',
+                            flexWrap: 'wrap',
+                            alignItems: 'flex-start',
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <strong style={{ color: '#0f172a', display: 'block' }}>
+                              {selectedProduct.name}
+                            </strong>
 
-                        <div style={{ textAlign: 'right' }}>
-                          <p style={{ margin: 0, color: '#64748b' }}>Subtotal</p>
-                          <strong style={{ color: '#0f172a' }}>
-                            {formatCurrency(getItemSubtotal(item))}
-                          </strong>
+                            <div
+                              style={{
+                                marginTop: '0.6rem',
+                                display: 'flex',
+                                gap: '0.75rem',
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  backgroundColor: '#f8fafc',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: '999px',
+                                  padding: '0.25rem 0.65rem',
+                                  fontSize: '0.85rem',
+                                  color: '#475569',
+                                }}
+                              >
+                                Cantidad: {item.quantity}
+                              </span>
+
+                              <span
+                                style={{
+                                  backgroundColor: '#f8fafc',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: '999px',
+                                  padding: '0.25rem 0.65rem',
+                                  fontSize: '0.85rem',
+                                  color: '#475569',
+                                }}
+                              >
+                                Precio: {formatCurrency(selectedProduct.sale_price)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div style={{ minWidth: '140px', textAlign: 'right' }}>
+                            <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
+                              Subtotal
+                            </p>
+                            <strong style={{ color: '#0f172a', fontSize: '1rem' }}>
+                              {formatCurrency(getItemSubtotal(item))}
+                            </strong>
+
+                            {saleItems.length > 1 && (
+                              <div style={{ marginTop: '0.75rem' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => removeSaleItemRow(index)}
+                                  style={{
+                                    border: '1px solid #fecaca',
+                                    backgroundColor: '#ffffff',
+                                    color: '#dc2626',
+                                    borderRadius: '10px',
+                                    padding: '0.55rem 0.9rem',
+                                    cursor: 'pointer',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  Quitar
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </SalesSectionCard>
+            {/* =========================================================
+                FIN — APARTADO CARRITO DE VENTA
+            ========================================================= */}
 
+            {/* =========================================================
+                INICIO — APARTADO CONFIGURACIÓN DE PLAZOS
+            ========================================================= */}
             {formData.sale_type === 'installments' && (
               <SalesSectionCard
                 title="Configuración de plazos"
@@ -814,8 +1016,17 @@ const VentasModule: React.FC = () => {
                 </div>
               </SalesSectionCard>
             )}
+            {/* =========================================================
+                FIN — APARTADO CONFIGURACIÓN DE PLAZOS
+            ========================================================= */}
           </div>
+          {/* =========================================================
+              FIN — COLUMNA IZQUIERDA
+          ========================================================= */}
 
+          {/* =========================================================
+              INICIO — COLUMNA DERECHA / RESUMEN
+          ========================================================= */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <SalesSectionCard
               title="Resumen de venta"
@@ -906,10 +1117,37 @@ const VentasModule: React.FC = () => {
                   </>
                 )}
               </div>
-            </SalesSectionCard>
+
+            {/* Botón para registro de venta */}
+            <div style={{ marginTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={handleCreateSale}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '12px',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  padding: '0.9rem 1rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Registrar venta
+              </button>
+            </div>
+            {/* FIN Botón para registro de venta */}
+          </SalesSectionCard>
           </div>
+          {/* =========================================================
+              FIN — COLUMNA DERECHA / RESUMEN
+          ========================================================= */}
         </div>
       )}
+      {/* =========================================================
+          FIN — CONTENIDO PRINCIPAL DEL MÓDULO
+      ========================================================= */}
     </div>
   );
 };
