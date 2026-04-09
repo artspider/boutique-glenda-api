@@ -5,10 +5,12 @@ import VentasModule from './modules/VentasModule';
 import PagosModule from './modules/PagosModule';
 import InventarioModule from './modules/InventarioModule';
 import CreditosModule from './modules/CreditosModule';
+import DashboardModule from './modules/DashboardModule';
 import { useNavigate } from 'react-router-dom';
 import { getAccessToken } from '../services/authService';
 
 type ActiveModule =
+  | 'dashboard'
   | 'clientes'
   | 'productos'
   | 'ventas'
@@ -37,6 +39,11 @@ const Navbar: React.FC<NavbarProps> = ({ activeModule, onChangeModule }) => (
     }}
   >
     <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+      <li>
+  <button type="button" onClick={() => onChangeModule('dashboard')}>
+    Dashboard {activeModule === 'dashboard' ? '•' : ''}
+  </button>
+</li>
       <li>
         <button type="button" onClick={() => onChangeModule('clientes')}>
           Clientes {activeModule === 'clientes' ? '•' : ''}
@@ -72,7 +79,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeModule, onChangeModule }) => (
 );
 
 const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const [activeModule, setActiveModule] = useState<ActiveModule>('clientes');
+  const [activeModule, setActiveModule] = useState<ActiveModule>('dashboard');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -110,6 +117,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             minWidth: '0',
           }}
         >
+          {activeModule === 'dashboard' && <DashboardModule />}
           {activeModule === 'clientes' && <ClientesModule />}
           {activeModule === 'productos' && <ProductosModule />}
           {activeModule === 'ventas' && <VentasModule />}
