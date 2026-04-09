@@ -337,6 +337,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [activeModule, setActiveModule] = useState<ActiveModule>('dashboard');
   const [isCompactSidebar, setIsCompactSidebar] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -361,7 +362,10 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsCompactSidebar(window.innerWidth <= 1100);
+      const width = window.innerWidth;
+
+      setIsCompactSidebar(width <= 1100);
+      setIsMobileView(width <= 768);
     };
 
     handleResize();
@@ -387,25 +391,28 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           minHeight: 'calc(100vh - 60px)',
         }}
       >
-        <Sidebar
-          activeModule={activeModule}
-          onChangeModule={setActiveModule}
-          isCompact={isCompactSidebar}
-        />
+        {!isMobileView && (
+          <Sidebar
+            activeModule={activeModule}
+            onChangeModule={setActiveModule}
+            isCompact={isCompactSidebar}
+          />
+        )}
 
         <main
           style={{
             flex: 1,
-            padding: '1rem',
+            padding: isMobileView ? '0.75rem' : '1rem',
             minWidth: 0,
+            width: '100%',
           }}
         >
           <section
             style={{
               backgroundColor: '#ffffff',
               border: '1px solid #e5e7eb',
-              borderRadius: '14px',
-              padding: '1rem',
+              borderRadius: isMobileView ? '12px' : '14px',
+              padding: isMobileView ? '0.85rem' : '1rem',
               marginBottom: '0.85rem',
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
             }}
@@ -434,8 +441,8 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             style={{
               backgroundColor: '#ffffff',
               border: '1px solid #e5e7eb',
-              borderRadius: '14px',
-              padding: '1rem',
+              borderRadius: isMobileView ? '12px' : '14px',
+              padding: isMobileView ? '0.75rem' : '1rem',
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
             }}
           >

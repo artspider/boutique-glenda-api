@@ -57,11 +57,10 @@ const styles = {
     padding: '0.85rem 1rem',
   },
   mainGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)',
-    gap: '1rem',
-    alignItems: 'start' as const,
-  },
+  display: 'grid',
+  gap: '1rem',
+  alignItems: 'start' as const,
+},
   column: {
     display: 'flex',
     flexDirection: 'column' as const,
@@ -182,6 +181,22 @@ miniCardLabel: {
     borderRadius: '10px',
     padding: '0.75rem 0.85rem',
   },
+    summaryLineBox: {
+    border: '1px solid #dbeafe',
+    borderRadius: '10px',
+    padding: '0.6rem 0.75rem',
+    backgroundColor: '#ffffff',
+  },
+  summaryLineLabel: {
+    margin: 0,
+    color: '#475569',
+    fontSize: '0.8rem',
+    lineHeight: 1.25,
+  },
+  summaryLineValue: {
+    color: '#0f172a',
+    fontWeight: 700,
+  },
 };
 
 /* =========================================================
@@ -220,6 +235,8 @@ const VentasModule: React.FC = () => {
     credit: '',
   });
 
+  const [isMobileModule, setIsMobileModule] = useState(false);
+
   /* =========================================================
      CARGA DE DATOS
   ========================================================= */
@@ -244,6 +261,19 @@ const VentasModule: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+  const handleResize = () => {
+    setIsMobileModule(window.innerWidth <= 768);
+  };
+
+  handleResize();
+  window.addEventListener('resize', handleResize);
+
+  return () => {
+    window.removeEventListener('resize', handleResize);
+  };
+}, []);
 
   /* =========================================================
      HELPERS DE PRODUCTOS Y CARRITO
@@ -473,7 +503,14 @@ const VentasModule: React.FC = () => {
       )}
 
       {!loading && !error && (
-        <div style={styles.mainGrid}>
+        <div
+  style={{
+    ...styles.mainGrid,
+    gridTemplateColumns: isMobileModule
+      ? '1fr'
+      : 'minmax(0, 2fr) minmax(280px, 1fr)',
+  }}
+>
           {/* =========================================================
               COLUMNA IZQUIERDA
           ========================================================= */}
@@ -487,12 +524,12 @@ const VentasModule: React.FC = () => {
               tone="blue"
             >
               <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '0.85rem',
-                }}
-              >
+  style={{
+    display: 'grid',
+    gridTemplateColumns: isMobileModule ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+    gap: '0.85rem',
+  }}
+>
                 <div>
                   <label style={styles.label}>Cliente</label>
                   <select
@@ -559,12 +596,14 @@ const VentasModule: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div style={styles.softPanel}>
                   <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(0, 2fr) minmax(110px, 110px)',
-                      gap: '0.85rem',
-                    }}
-                  >
+  style={{
+    display: 'grid',
+    gridTemplateColumns: isMobileModule
+      ? '1fr'
+      : 'minmax(0, 2fr) minmax(110px, 110px)',
+    gap: '0.85rem',
+  }}
+>
                     <div>
                       <label style={styles.label}>Producto</label>
                       <select
@@ -606,13 +645,17 @@ const VentasModule: React.FC = () => {
                   </div>
 
                   <div
-                    style={{
-                      marginTop: '0.85rem',
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                      gap: '0.65rem',
-                    }}
-                  >
+  style={{
+    marginTop: '0.85rem',
+    display: 'grid',
+    gridTemplateColumns: isMobileModule
+      ? '1fr'
+      : 'repeat(3, minmax(0, 1fr))',
+    gap: '0.65rem',
+  }}
+>
+
+
                     <div style={styles.miniCard}>
   <p style={{ ...styles.miniCardLabel, marginBottom: 0 }}>
     Precio: <span style={styles.miniCardValue}>
@@ -802,12 +845,12 @@ const VentasModule: React.FC = () => {
                 tone="amber"
               >
                 <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '0.85rem',
-                  }}
-                >
+  style={{
+    display: 'grid',
+    gridTemplateColumns: isMobileModule ? '1fr' : 'repeat(3, minmax(0, 1fr))',
+    gap: '0.85rem',
+  }}
+>
                   <div>
                     <label style={styles.label}>Enganche</label>
                     <input
@@ -922,136 +965,91 @@ const VentasModule: React.FC = () => {
           ========================================================= */}
           <div style={styles.column}>
             <SalesSectionCard
-              title="Resumen de venta"
-              subtitle="Validación rápida antes de registrar."
-              tone="accent"
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                <div style={styles.summaryBox}>
-                  <p
-                    style={{
-                      margin: 0,
-                      marginBottom: '0.25rem',
-                      color: '#64748b',
-                      fontSize: '0.8rem',
-                    }}
-                  >
-                    Cliente
-                  </p>
-                  <strong
-                    style={{
-                      color: '#0f172a',
-                      fontSize: '0.9rem',
-                    }}
-                  >
-                    {selectedCustomerName}
-                  </strong>
-                </div>
+  title="Resumen de venta"
+  subtitle="Validación rápida antes de registrar."
+  tone="accent"
+>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+    <div style={styles.summaryLineBox}>
+      <p style={styles.summaryLineLabel}>
+        Cliente: <span style={styles.summaryLineValue}>{selectedCustomerName}</span>
+      </p>
+    </div>
 
-                <div style={styles.summaryBox}>
-                  <p
-                    style={{
-                      margin: 0,
-                      marginBottom: '0.25rem',
-                      color: '#64748b',
-                      fontSize: '0.8rem',
-                    }}
-                  >
-                    Tipo de venta
-                  </p>
-                  <strong
-                    style={{
-                      color: '#0f172a',
-                      fontSize: '0.9rem',
-                    }}
-                  >
-                    {formData.sale_type === 'installments'
-                      ? 'Venta a plazos'
-                      : 'Pago inmediato'}
-                  </strong>
-                </div>
+    <div style={styles.summaryLineBox}>
+      <p style={styles.summaryLineLabel}>
+        Tipo:{' '}
+        <span style={styles.summaryLineValue}>
+          {formData.sale_type === 'installments'
+            ? 'Venta a plazos'
+            : 'Pago inmediato'}
+        </span>
+      </p>
+    </div>
 
-                <div style={styles.summaryAccentBox}>
-                  <p
-                    style={{
-                      margin: 0,
-                      marginBottom: '0.25rem',
-                      color: '#1d4ed8',
-                      fontSize: '0.8rem',
-                    }}
-                  >
-                    Total estimado
-                  </p>
-                  <strong
-                    style={{
-                      color: '#1e3a8a',
-                      fontSize: '1rem',
-                    }}
-                  >
-                    {formatCurrency(saleTotal)}
-                  </strong>
-                </div>
+    <div style={styles.summaryAccentBox}>
+      <p
+        style={{
+          margin: 0,
+          color: '#1d4ed8',
+          fontSize: '0.8rem',
+          lineHeight: 1.25,
+        }}
+      >
+        Total: <span style={{ color: '#1e3a8a', fontWeight: 800 }}>{formatCurrency(saleTotal)}</span>
+      </p>
+    </div>
 
-                {formData.sale_type === 'installments' && (
-                  <>
-                    <div style={styles.summaryWarmBox}>
-                      <p
-                        style={{
-                          margin: 0,
-                          marginBottom: '0.25rem',
-                          color: '#9a3412',
-                          fontSize: '0.8rem',
-                        }}
-                      >
-                        Enganche
-                      </p>
-                      <strong
-                        style={{
-                          color: '#7c2d12',
-                          fontSize: '0.9rem',
-                        }}
-                      >
-                        {formatCurrency(Number(formData.down_payment))}
-                      </strong>
-                    </div>
+    {formData.sale_type === 'installments' && (
+      <>
+        <div style={styles.summaryWarmBox}>
+          <p
+            style={{
+              margin: 0,
+              color: '#9a3412',
+              fontSize: '0.8rem',
+              lineHeight: 1.25,
+            }}
+          >
+            Enganche:{' '}
+            <span style={{ color: '#7c2d12', fontWeight: 800 }}>
+              {formatCurrency(Number(formData.down_payment))}
+            </span>
+          </p>
+        </div>
 
-                    <div style={styles.summaryWarnBox}>
-                      <p
-                        style={{
-                          margin: 0,
-                          marginBottom: '0.25rem',
-                          color: '#854d0e',
-                          fontSize: '0.8rem',
-                        }}
-                      >
-                        Saldo pendiente
-                      </p>
-                      <strong
-                        style={{
-                          color: '#713f12',
-                          fontSize: '0.9rem',
-                        }}
-                      >
-                        {formatCurrency(financedBalance)}
-                      </strong>
-                    </div>
-                  </>
-                )}
+        <div style={styles.summaryWarnBox}>
+          <p
+            style={{
+              margin: 0,
+              color: '#854d0e',
+              fontSize: '0.8rem',
+              lineHeight: 1.25,
+            }}
+          >
+            Saldo:{' '}
+            <span style={{ color: '#713f12', fontWeight: 800 }}>
+              {formatCurrency(financedBalance)}
+            </span>
+          </p>
+        </div>
+      </>
+    )}
 
-                <div style={{ marginTop: '0.35rem' }}>
-                  <button
-                    type="button"
-                    onClick={handleCreateSale}
-                    style={{
-                      ...styles.primaryButton,
-                      width: '100%',
-                    }}
-                  >
-                    Registrar venta
-                  </button>
-                </div>
-              </div>
-            </SalesSectionCard>
+    <div style={{ marginTop: '0.2rem' }}>
+      <button
+        type="button"
+        onClick={handleCreateSale}
+        style={{
+          ...styles.primaryButton,
+          width: '100%',
+        }}
+      >
+        Registrar venta
+      </button>
+    </div>
+  </div>
+</SalesSectionCard>
           </div>
         </div>
       )}
