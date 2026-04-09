@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/LoginPage';
 import LayoutBase from '../components/LayoutBase';
 import { getAccessToken } from '../services/authService';
+import DashboardPage from "../pages/DashboardPage"
 
 function AppRouter() {
   const token = getAccessToken();
@@ -14,6 +15,7 @@ function AppRouter() {
         path="/app"
         element={token ? <LayoutBase /> : <Navigate to="/login" replace />}
       />
+      <Route path="dashboard" element={<DashboardPage />} />
     </Routes>
   );
 }
