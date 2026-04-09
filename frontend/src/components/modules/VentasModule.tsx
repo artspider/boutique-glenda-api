@@ -84,17 +84,17 @@ const styles = {
     boxSizing: 'border-box' as const,
   },
   miniCard: {
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '10px',
-    padding: '0.75rem 0.85rem',
-  },
-  miniCardLabel: {
-    margin: 0,
-    marginBottom: '0.25rem',
-    color: '#64748b',
-    fontSize: '0.8rem',
-  },
+  backgroundColor: '#ffffff',
+  border: '1px solid #e2e8f0',
+  borderRadius: '10px',
+  padding: '0.6rem 0.75rem',
+},
+miniCardLabel: {
+  margin: 0,
+  color: '#64748b',
+  fontSize: '0.8rem',
+  lineHeight: 1.2,
+},
   miniCardValue: {
     color: '#0f172a',
     fontSize: '0.92rem',
@@ -614,27 +614,30 @@ const VentasModule: React.FC = () => {
                     }}
                   >
                     <div style={styles.miniCard}>
-                      <p style={styles.miniCardLabel}>Precio</p>
-                      <strong style={styles.miniCardValue}>
-                        {selectedProduct ? formatCurrency(selectedProduct.sale_price) : '--'}
-                      </strong>
-                    </div>
+  <p style={{ ...styles.miniCardLabel, marginBottom: 0 }}>
+    Precio: <span style={styles.miniCardValue}>
+      {selectedProduct ? formatCurrency(selectedProduct.sale_price) : '--'}
+    </span>
+  </p>
+</div>
 
-                    <div style={styles.miniCard}>
-                      <p style={styles.miniCardLabel}>Stock disponible</p>
-                      <strong style={styles.miniCardValue}>
-                        {selectedProduct ? selectedProduct.stock : '--'}
-                      </strong>
-                    </div>
+<div style={styles.miniCard}>
+  <p style={{ ...styles.miniCardLabel, marginBottom: 0 }}>
+    Stock: <span style={styles.miniCardValue}>
+      {selectedProduct ? selectedProduct.stock : '--'}
+    </span>
+  </p>
+</div>
 
-                    <div style={styles.miniCard}>
-                      <p style={styles.miniCardLabel}>Subtotal estimado</p>
-                      <strong style={styles.miniCardValue}>
-                        {selectedProduct
-                          ? formatCurrency(selectedProduct.sale_price * productForm.quantity)
-                          : '--'}
-                      </strong>
-                    </div>
+<div style={styles.miniCard}>
+  <p style={{ ...styles.miniCardLabel, marginBottom: 0 }}>
+    Subtotal: <span style={styles.miniCardValue}>
+      {selectedProduct
+        ? formatCurrency(selectedProduct.sale_price * productForm.quantity)
+        : '--'}
+    </span>
+  </p>
+</div>
                   </div>
 
                   <div
