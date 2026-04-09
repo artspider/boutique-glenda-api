@@ -18,17 +18,18 @@ const VentasModule: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    customer_id: '',
-    payment_type: 'cash',
-    is_credit: false,
-    down_payment: '0',
-    number_of_payments: '0',
-    payment_frequency: 'none',
-  });
+  customer_id: '',
+  sale_type: 'immediate' as SaleType,
+  down_payment: '0',
+  number_of_payments: '0',
+  payment_frequency: 'none',
+});
 
   const [saleItems, setSaleItems] = useState<SaleItemForm[]>([
     { product_id: '', quantity: 1 },
   ]);
+
+  type SaleType = 'immediate' | 'installments';
 
   const [formErrors, setFormErrors] = useState({
     customer_id: '',
@@ -136,7 +137,7 @@ const VentasModule: React.FC = () => {
       errors.quantity = 'No hay suficiente stock disponible';
     }
 
-  if (formData.is_credit) {
+  if (formData.sale_type === 'installments') {
   if (Number(formData.number_of_payments) <= 0) {
     errors.credit = 'El número de pagos debe ser mayor a 0';
   }
@@ -182,24 +183,23 @@ const VentasModule: React.FC = () => {
       });
 
       await createSale({
-        customer_id: Number(formData.customer_id),
-        user_id: 1,
-        payment_type: formData.payment_type,
-        items,
-        is_credit: formData.is_credit,
-        down_payment: Number(formData.down_payment),
-        number_of_payments: Number(formData.number_of_payments),
-        payment_frequency: formData.payment_frequency,
-      });
+  customer_id: Number(formData.customer_id),
+  user_id: 1,
+  payment_type: formData.sale_type === 'installments' ? 'credit' : 'cash',
+  items,
+  is_credit: formData.sale_type === 'installments',
+  down_payment: Number(formData.down_payment),
+  number_of_payments: Number(formData.number_of_payments),
+  payment_frequency: formData.payment_frequency,
+});
 
       setFormData({
-        customer_id: '',
-        payment_type: 'cash',
-        is_credit: false,
-        down_payment: '0',
-        number_of_payments: '0',
-        payment_frequency: 'none',
-      });
+  customer_id: '',
+  sale_type: 'immediate',
+  down_payment: '0',
+  number_of_payments: '0',
+  payment_frequency: 'none',
+});
 
       setSaleItems([{ product_id: '', quantity: 1 }]);
 
@@ -333,7 +333,7 @@ const VentasModule: React.FC = () => {
 
           <p>Total estimado de la venta: ${saleTotal}</p>
 
-          {formData.is_credit && (
+          {formData.sale_type === 'installments' && (
             <div>
               <div>
                 <label>Enganche</label>
@@ -395,26 +395,27 @@ const VentasModule: React.FC = () => {
           )}
 
           <div>
-            <label>Tipo de pago</label>
-            <select
-              value={formData.payment_type}
-              onChange={(e) => {
-  const isCredit = e.target.value === 'credit';
+  <label>Tipo de venta</label>
+  <select
+    value={formData.sale_type}
+    onChange={(e) => {
+      const nextSaleType = e.target.value as SaleType;
 
-  setFormData({
-    ...formData,
-    payment_type: e.target.value,
-    is_credit: isCredit,
-    down_payment: isCredit ? formData.down_payment : '0',
-    number_of_payments: isCredit ? formData.number_of_payments : '0',
-    payment_frequency: isCredit ? formData.payment_frequency : 'none',
-  });
-}}
-            >
-              <option value="cash">Contado</option>
-              <option value="credit">Crédito</option>
-            </select>
-          </div>
+      setFormData({
+        ...formData,
+        sale_type: nextSaleType,
+        down_payment: nextSaleType === 'installments' ? formData.down_payment : '0',
+        number_of_payments:
+          nextSaleType === 'installments' ? formData.number_of_payments : '0',
+        payment_frequency:
+          nextSaleType === 'installments' ? formData.payment_frequency : 'none',
+      });
+    }}
+  >
+    <option value="immediate">Pago inmediato</option>
+    <option value="installments">Venta a plazos</option>
+  </select>
+</div>
 
           <button onClick={handleCreateSale}>Registrar venta</button>
 
