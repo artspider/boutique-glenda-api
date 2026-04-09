@@ -99,7 +99,10 @@ const moduleDescriptions: Record<ActiveModule, string> = {
   creditos: 'Revisa saldos, pagos programados y estado de créditos',
 };
 
-const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
+const Header: React.FC<{ activeModule: ActiveModule; isMobileView: boolean }> = ({
+  activeModule,
+  isMobileView,
+}) => (
   <header
     style={{
       height: '60px',
@@ -108,17 +111,18 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 1rem',
+      padding: isMobileView ? '0 0.75rem' : '0 1rem',
       position: 'sticky',
       top: 0,
       zIndex: 10,
+      gap: '0.75rem',
     }}
   >
-    <div>
+    <div style={{ minWidth: 0 }}>
       <p
         style={{
           margin: 0,
-          fontSize: '0.75rem',
+          fontSize: isMobileView ? '0.68rem' : '0.75rem',
           fontWeight: 600,
           color: '#2563eb',
           textTransform: 'uppercase',
@@ -130,7 +134,7 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
       <h1
         style={{
           margin: '0.1rem 0 0 0',
-          fontSize: '1.15rem',
+          fontSize: isMobileView ? '1rem' : '1.15rem',
           color: '#111827',
           lineHeight: 1.2,
         }}
@@ -142,6 +146,7 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
     <div
       style={{
         textAlign: 'right',
+        display: isMobileView ? 'none' : 'block',
       }}
     >
       <p
@@ -383,7 +388,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         backgroundColor: '#f3f4f6',
       }}
     >
-      <Header activeModule={activeModule} />
+      <Header activeModule={activeModule} isMobileView={isMobileView} />
 
       <div
         style={{
@@ -391,20 +396,17 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           minHeight: 'calc(100vh - 60px)',
         }}
       >
-        {!isMobileView && (
-          <Sidebar
-            activeModule={activeModule}
-            onChangeModule={setActiveModule}
-            isCompact={isCompactSidebar}
-          />
-        )}
+        <Sidebar
+          activeModule={activeModule}
+          onChangeModule={setActiveModule}
+          isCompact={isCompactSidebar}
+        />
 
         <main
           style={{
             flex: 1,
             padding: isMobileView ? '0.75rem' : '1rem',
             minWidth: 0,
-            width: '100%',
           }}
         >
           <section
@@ -420,7 +422,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             <h2
               style={{
                 margin: 0,
-                fontSize: '1rem',
+                fontSize: isMobileView ? '0.95rem' : '1rem',
                 color: '#111827',
               }}
             >
@@ -430,7 +432,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               style={{
                 margin: '0.35rem 0 0 0',
                 color: '#6b7280',
-                fontSize: '0.88rem',
+                fontSize: isMobileView ? '0.82rem' : '0.88rem',
               }}
             >
               {moduleDescriptions[activeModule]}
