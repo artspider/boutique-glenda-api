@@ -1,5 +1,37 @@
 import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
+import KpiCard from '../dashboard/KpiCard';
+import DashboardPanel from '../dashboard/DashboardPanel';
+import SimpleTable from '../dashboard/SimpleTable';
+import StatusBadge from '../dashboard/StatusBadge';
+
+  const upcomingPaymentsColumns = [
+    { key: 'cliente', header: 'Cliente' },
+    { key: 'fecha', header: 'Fecha' },
+    { key: 'monto', header: 'Monto' },
+    { key: 'estatus', header: 'Estatus' },
+  ] as const;
+
+  const upcomingPaymentsRows = [
+    {
+      cliente: 'María López',
+      fecha: '10/04/2026',
+      monto: formatCurrency(350),
+      estatus: <StatusBadge label="Pendiente" />,
+    },
+    {
+      cliente: 'José Ramírez',
+      fecha: '11/04/2026',
+      monto: formatCurrency(420),
+      estatus: <StatusBadge label="Pendiente" />,
+    },
+    {
+      cliente: 'Ana Torres',
+      fecha: '12/04/2026',
+      monto: formatCurrency(280),
+      estatus: <StatusBadge label="Pendiente" />,
+    },
+  ];
 
 const DashboardModule: React.FC = () => {
   return (
@@ -7,7 +39,7 @@ const DashboardModule: React.FC = () => {
 
       <h2>Dashboard de cobranza</h2>
 
-      {/* 🔵 FILA 1 — KPIs */}
+            {/* 🔵 FILA 1 — KPIs */}
       <div
         style={{
           display: 'grid',
@@ -15,87 +47,76 @@ const DashboardModule: React.FC = () => {
           gap: '1rem',
         }}
       >
-        <div style={cardStyle('#e6f4ff', '#91caff')}>
-          <p>Total por cobrar</p>
-          <h3>{formatCurrency(0)}</h3>
-        </div>
+        <KpiCard
+          title="Total por cobrar"
+          value={formatCurrency(0)}
+          backgroundColor="#e6f4ff"
+          borderColor="#91caff"
+        />
 
-        <div style={cardStyle('#fff1f0', '#ffa39e')}>
-          <p>Total vencido</p>
-          <h3 style={{ color: '#cf1322' }}>{formatCurrency(0)}</h3>
-        </div>
+        <KpiCard
+          title="Total vencido"
+          value={formatCurrency(0)}
+          backgroundColor="#fff1f0"
+          borderColor="#ffa39e"
+          valueColor="#cf1322"
+        />
 
-        <div style={cardStyle('#f6ffed', '#b7eb8f')}>
-          <p>Pagos del día</p>
-          <h3 style={{ color: '#389e0d' }}>{formatCurrency(0)}</h3>
-        </div>
+        <KpiCard
+          title="Pagos del día"
+          value={formatCurrency(0)}
+          backgroundColor="#f6ffed"
+          borderColor="#b7eb8f"
+          valueColor="#389e0d"
+        />
 
-        <div style={cardStyle('#fffbe6', '#ffe58f')}>
-          <p>Próximos pagos</p>
-          <h3>{formatCurrency(0)}</h3>
-        </div>
+        <KpiCard
+          title="Próximos pagos"
+          value={formatCurrency(0)}
+          backgroundColor="#fffbe6"
+          borderColor="#ffe58f"
+        />
       </div>
 
       {/* 🟣 FILA 2 — LISTA + ALERTAS */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
-          gap: '1rem',
-        }}
-      >
-        {/* Próximos pagos */}
-        <div style={boxStyle}>
-          <h3>Próximos pagos</h3>
-          <p style={{ color: '#888' }}>Aquí se mostrará la lista de pagos próximos</p>
-        </div>
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '2fr 1fr',
+    gap: '1rem',
+  }}
+>
+  <DashboardPanel title="Próximos pagos">
+  <SimpleTable
+    columns={upcomingPaymentsColumns}
+    rows={upcomingPaymentsRows}
+  />
+</DashboardPanel>
 
-        {/* Alertas */}
-        <div style={boxStyle}>
-          <h3>Alertas</h3>
-          <p style={{ color: '#888' }}>Pagos vencidos recientes</p>
-        </div>
-      </div>
+  <DashboardPanel title="Alertas">
+    <p style={{ color: '#888' }}>Pagos vencidos recientes</p>
+  </DashboardPanel>
+</div>
 
-      {/* 🟢 FILA 3 — PRODUCTO + MENSAJES */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem',
-        }}
-      >
-        {/* Producto estrella */}
-        <div style={boxStyle}>
-          <h3>Producto estrella</h3>
-          <p style={{ color: '#888' }}>Producto más vendido</p>
-        </div>
+{/* 🟢 FILA 3 — PRODUCTO + MENSAJES */}
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '1rem',
+  }}
+>
+  <DashboardPanel title="Producto estrella">
+    <p style={{ color: '#888' }}>Producto más vendido</p>
+  </DashboardPanel>
 
-        {/* Mensajes */}
-        <div style={boxStyle}>
-          <h3>Mensajes recientes</h3>
-          <p style={{ color: '#888' }}>WhatsApp / Instagram</p>
-        </div>
-      </div>
+  <DashboardPanel title="Mensajes recientes">
+    <p style={{ color: '#888' }}>WhatsApp / Instagram</p>
+  </DashboardPanel>
+</div>
 
-    </div>
+</div>
   );
 };
 
 export default DashboardModule;
-
-/* 🔧 estilos reutilizables */
-
-const cardStyle = (bg: string, border: string): React.CSSProperties => ({
-  backgroundColor: bg,
-  border: `1px solid ${border}`,
-  borderRadius: '12px',
-  padding: '1rem',
-});
-
-const boxStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
-  border: '1px solid #ddd',
-  borderRadius: '12px',
-  padding: '1rem',
-};
