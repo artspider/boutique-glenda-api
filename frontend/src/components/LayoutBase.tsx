@@ -8,6 +8,15 @@ import CreditosModule from './modules/CreditosModule';
 import DashboardModule from './modules/DashboardModule';
 import { useNavigate } from 'react-router-dom';
 import { getAccessToken } from '../services/authService';
+import {
+  LayoutDashboard,
+  Users,
+  Package,
+  ShoppingCart,
+  Wallet,
+  Boxes,
+  BadgeDollarSign,
+} from 'lucide-react';
 
 type ActiveModule =
   | 'dashboard'
@@ -22,6 +31,7 @@ type NavItem = {
   key: ActiveModule;
   label: string;
   description: string;
+  icon: React.ReactNode;
 };
 
 const navItems: NavItem[] = [
@@ -29,36 +39,43 @@ const navItems: NavItem[] = [
     key: 'dashboard',
     label: 'Dashboard',
     description: 'Resumen general',
+    icon: <LayoutDashboard size={18} />,
   },
   {
     key: 'clientes',
     label: 'Clientes',
     description: 'Gestión de clientes',
+    icon: <Users size={18} />,
   },
   {
     key: 'productos',
     label: 'Productos',
     description: 'Catálogo y precios',
+    icon: <Package size={18} />,
   },
   {
     key: 'ventas',
     label: 'Ventas',
     description: 'Registro de ventas',
+    icon: <ShoppingCart size={18} />,
   },
   {
     key: 'pagos',
     label: 'Pagos',
     description: 'Cobranza y abonos',
+    icon: <Wallet size={18} />,
   },
   {
     key: 'inventario',
     label: 'Inventario',
     description: 'Control de stock',
+    icon: <Boxes size={18} />,
   },
   {
     key: 'creditos',
     label: 'Créditos',
     description: 'Seguimiento financiero',
+    icon: <BadgeDollarSign size={18} />,
   },
 ];
 
@@ -85,13 +102,13 @@ const moduleDescriptions: Record<ActiveModule, string> = {
 const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
   <header
     style={{
-      height: '72px',
+      height: '60px',
       backgroundColor: '#ffffff',
       borderBottom: '1px solid #e5e7eb',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 1.5rem',
+      padding: '0 1rem',
       position: 'sticky',
       top: 0,
       zIndex: 10,
@@ -101,7 +118,7 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
       <p
         style={{
           margin: 0,
-          fontSize: '0.8rem',
+          fontSize: '0.75rem',
           fontWeight: 600,
           color: '#2563eb',
           textTransform: 'uppercase',
@@ -112,9 +129,10 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
       </p>
       <h1
         style={{
-          margin: '0.2rem 0 0 0',
-          fontSize: '1.35rem',
+          margin: '0.1rem 0 0 0',
+          fontSize: '1.15rem',
           color: '#111827',
+          lineHeight: 1.2,
         }}
       >
         {moduleTitles[activeModule]}
@@ -129,7 +147,7 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
       <p
         style={{
           margin: 0,
-          fontSize: '0.88rem',
+          fontSize: '0.82rem',
           color: '#6b7280',
         }}
       >
@@ -137,8 +155,8 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
       </p>
       <p
         style={{
-          margin: '0.2rem 0 0 0',
-          fontSize: '0.82rem',
+          margin: '0.15rem 0 0 0',
+          fontSize: '0.76rem',
           color: '#9ca3af',
         }}
       >
@@ -151,47 +169,56 @@ const Header: React.FC<{ activeModule: ActiveModule }> = ({ activeModule }) => (
 type SidebarProps = {
   activeModule: ActiveModule;
   onChangeModule: (module: ActiveModule) => void;
+  isCompact: boolean;
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ activeModule, onChangeModule }) => (
+const Sidebar: React.FC<SidebarProps> = ({
+  activeModule,
+  onChangeModule,
+  isCompact,
+}) => (
   <aside
     style={{
-      width: '280px',
+      width: isCompact ? '88px' : '240px',
       backgroundColor: '#111827',
       color: '#ffffff',
       display: 'flex',
       flexDirection: 'column',
-      padding: '1.25rem 1rem',
+      padding: isCompact ? '1rem 0.5rem' : '1rem 0.75rem',
       gap: '1rem',
-      minHeight: 'calc(100vh - 72px)',
+      minHeight: 'calc(100vh - 60px)',
+      transition: 'width 0.2s ease, padding 0.2s ease',
+      flexShrink: 0,
     }}
   >
-    <div
-      style={{
-        padding: '0.5rem 0.5rem 1rem 0.5rem',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <h2
+    {!isCompact && (
+      <div
         style={{
-          margin: 0,
-          fontSize: '1rem',
-          color: '#f9fafb',
+          padding: '0.5rem 0.5rem 1rem 0.5rem',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        Panel principal
-      </h2>
-      <p
-        style={{
-          margin: '0.4rem 0 0 0',
-          fontSize: '0.86rem',
-          color: '#9ca3af',
-          lineHeight: 1.4,
-        }}
-      >
-        Accede rápidamente a las áreas clave del sistema.
-      </p>
-    </div>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: '1rem',
+            color: '#f9fafb',
+          }}
+        >
+          Panel principal
+        </h2>
+        <p
+          style={{
+            margin: '0.4rem 0 0 0',
+            fontSize: '0.86rem',
+            color: '#9ca3af',
+            lineHeight: 1.4,
+          }}
+        >
+          Accede rápidamente a las áreas clave del sistema.
+        </p>
+      </div>
+    )}
 
     <nav>
       <ul
@@ -212,6 +239,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, onChangeModule }) => (
               <button
                 type="button"
                 onClick={() => onChangeModule(item.key)}
+                title={isCompact ? item.label : undefined}
                 style={{
                   width: '100%',
                   textAlign: 'left',
@@ -221,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, onChangeModule }) => (
                   backgroundColor: isActive ? '#1d4ed8' : '#1f2937',
                   color: '#ffffff',
                   borderRadius: '12px',
-                  padding: '0.85rem 0.9rem',
+                  padding: '0.65rem 0.75rem',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
@@ -229,21 +257,43 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, onChangeModule }) => (
                 <div
                   style={{
                     display: 'flex',
-                    justifyContent: 'space-between',
+                    justifyContent: isCompact ? 'center' : 'space-between',
                     alignItems: 'center',
                     gap: '0.75rem',
                   }}
                 >
-                  <span
+                  <div
                     style={{
-                      fontWeight: 600,
-                      fontSize: '0.95rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: isCompact ? '0' : '0.65rem',
+                      minWidth: 0,
                     }}
                   >
-                    {item.label}
-                  </span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: isActive ? '#dbeafe' : '#cbd5e1',
+                      }}
+                    >
+                      {item.icon}
+                    </span>
 
-                  {isActive && (
+                    {!isCompact && (
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontSize: '0.95rem',
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                    )}
+                  </div>
+
+                  {isActive && !isCompact && (
                     <span
                       style={{
                         display: 'inline-flex',
@@ -263,16 +313,18 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, onChangeModule }) => (
                   )}
                 </div>
 
-                <p
-                  style={{
-                    margin: '0.35rem 0 0 0',
-                    fontSize: '0.8rem',
-                    color: isActive ? '#dbeafe' : '#9ca3af',
-                    lineHeight: 1.35,
-                  }}
-                >
-                  {item.description}
-                </p>
+                {!isCompact && (
+                  <p
+                    style={{
+                      margin: '0.35rem 0 0 0',
+                      fontSize: '0.8rem',
+                      color: isActive ? '#dbeafe' : '#9ca3af',
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {item.description}
+                  </p>
+                )}
               </button>
             </li>
           );
@@ -284,6 +336,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, onChangeModule }) => (
 
 const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [activeModule, setActiveModule] = useState<ActiveModule>('dashboard');
+  const [isCompactSidebar, setIsCompactSidebar] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -306,6 +359,19 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     };
   }, [navigate]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsCompactSidebar(window.innerWidth <= 1100);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
     <div
       style={{
@@ -318,15 +384,19 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       <div
         style={{
           display: 'flex',
-          minHeight: 'calc(100vh - 72px)',
+          minHeight: 'calc(100vh - 60px)',
         }}
       >
-        <Sidebar activeModule={activeModule} onChangeModule={setActiveModule} />
+        <Sidebar
+          activeModule={activeModule}
+          onChangeModule={setActiveModule}
+          isCompact={isCompactSidebar}
+        />
 
         <main
           style={{
             flex: 1,
-            padding: '1.5rem',
+            padding: '1rem',
             minWidth: 0,
           }}
         >
@@ -334,16 +404,16 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             style={{
               backgroundColor: '#ffffff',
               border: '1px solid #e5e7eb',
-              borderRadius: '18px',
-              padding: '1.25rem 1.25rem 1.5rem 1.25rem',
-              marginBottom: '1rem',
+              borderRadius: '14px',
+              padding: '1rem',
+              marginBottom: '0.85rem',
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
             }}
           >
             <h2
               style={{
                 margin: 0,
-                fontSize: '1.05rem',
+                fontSize: '1rem',
                 color: '#111827',
               }}
             >
@@ -351,9 +421,9 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             </h2>
             <p
               style={{
-                margin: '0.45rem 0 0 0',
+                margin: '0.35rem 0 0 0',
                 color: '#6b7280',
-                fontSize: '0.92rem',
+                fontSize: '0.88rem',
               }}
             >
               {moduleDescriptions[activeModule]}
@@ -364,8 +434,8 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             style={{
               backgroundColor: '#ffffff',
               border: '1px solid #e5e7eb',
-              borderRadius: '18px',
-              padding: '1.25rem',
+              borderRadius: '14px',
+              padding: '1rem',
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
             }}
           >
