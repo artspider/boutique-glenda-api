@@ -484,6 +484,7 @@ const VentasModule: React.FC = () => {
             <SalesSectionCard
               title="Datos de venta"
               subtitle="Selecciona el cliente y define cómo se liquidará la venta."
+              tone="blue"
             >
               <div
                 style={{
@@ -553,6 +554,7 @@ const VentasModule: React.FC = () => {
             <SalesSectionCard
               title="Selección de producto"
               subtitle="Selecciona un producto y agrégalo al carrito."
+              tone="indigo"
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div style={styles.softPanel}>
@@ -666,6 +668,7 @@ const VentasModule: React.FC = () => {
             <SalesSectionCard
               title="Carrito de venta"
               subtitle="Revisa los productos agregados antes de registrar."
+              tone="green"
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div
@@ -793,6 +796,7 @@ const VentasModule: React.FC = () => {
               <SalesSectionCard
                 title="Configuración de plazos"
                 subtitle="Define el enganche y la estructura estimada de pagos."
+                tone="amber"
               >
                 <div
                   style={{
@@ -917,6 +921,7 @@ const VentasModule: React.FC = () => {
             <SalesSectionCard
               title="Resumen de venta"
               subtitle="Validación rápida antes de registrar."
+              tone="accent"
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                 <div style={styles.summaryBox}>
