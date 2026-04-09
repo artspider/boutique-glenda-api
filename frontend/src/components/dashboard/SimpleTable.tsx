@@ -15,10 +15,16 @@ function SimpleTable<T extends Record<string, React.ReactNode>>({
   rows,
 }: SimpleTableProps<T>) {
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div
+      style={{
+        overflowX: 'auto',
+        width: '100%',
+      }}
+    >
       <table
         style={{
           width: '100%',
+          minWidth: '520px',
           borderCollapse: 'collapse',
         }}
       >
@@ -29,10 +35,12 @@ function SimpleTable<T extends Record<string, React.ReactNode>>({
                 key={String(column.key)}
                 style={{
                   textAlign: 'left',
-                  padding: '0.75rem',
+                  padding: '0.6rem 0.65rem',
                   borderBottom: '1px solid #f0f0f0',
-                  fontSize: '0.875rem',
-                  color: '#595959',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#6b7280',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {column.header}
@@ -48,10 +56,12 @@ function SimpleTable<T extends Record<string, React.ReactNode>>({
                 <td
                   key={String(column.key)}
                   style={{
-                    padding: '0.75rem',
+                    padding: '0.65rem',
                     borderBottom: '1px solid #f5f5f5',
-                    fontSize: '0.95rem',
+                    fontSize: '0.9rem',
                     color: '#262626',
+                    verticalAlign: 'middle',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {row[column.key]}
