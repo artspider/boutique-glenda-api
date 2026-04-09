@@ -4,6 +4,7 @@ import KpiCard from '../dashboard/KpiCard';
 import DashboardPanel from '../dashboard/DashboardPanel';
 import SimpleTable from '../dashboard/SimpleTable';
 import StatusBadge from '../dashboard/StatusBadge';
+import AlertList from '../dashboard/AlertList';
 
   const upcomingPaymentsColumns = [
     { key: 'cliente', header: 'Cliente' },
@@ -30,6 +31,24 @@ import StatusBadge from '../dashboard/StatusBadge';
       fecha: '12/04/2026',
       monto: formatCurrency(280),
       estatus: <StatusBadge label="Pendiente" />,
+    },
+  ];
+
+    const alertItems = [
+    {
+      title: 'Pago vencido detectado',
+      description: 'María López tiene un pago vencido desde hace 2 días.',
+      tone: 'danger' as const,
+    },
+    {
+      title: 'Pago próximo a vencer',
+      description: 'José Ramírez debe pagar mañana su parcialidad.',
+      tone: 'warning' as const,
+    },
+    {
+      title: 'Seguimiento recomendado',
+      description: 'Ana Torres no ha respondido el último recordatorio.',
+      tone: 'info' as const,
     },
   ];
 
@@ -94,9 +113,12 @@ const DashboardModule: React.FC = () => {
 </DashboardPanel>
 
   <DashboardPanel title="Alertas">
-    <p style={{ color: '#888' }}>Pagos vencidos recientes</p>
-  </DashboardPanel>
+  <AlertList items={alertItems} />
+</DashboardPanel>
+
 </div>
+
+
 
 {/* 🟢 FILA 3 — PRODUCTO + MENSAJES */}
 <div
