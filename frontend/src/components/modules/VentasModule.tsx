@@ -6,6 +6,11 @@ import type { Product } from '../../services/productService';
 import { createSale, getSales } from '../../services/saleService';
 import type { Sale } from '../../services/saleService';
 
+type SaleItemForm = {
+  product_id: number | '';
+  quantity: number;
+};
+
 const VentasModule: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,39 +18,39 @@ const VentasModule: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-  customer_id: '',
-  payment_type: 'cash',
-});
+    customer_id: '',
+    payment_type: 'cash',
+    is_credit: false,
+    down_payment: '0',
+    number_of_payments: '0',
+    payment_frequency: 'none',
+  });
 
-  type SaleItemForm = {
-  product_id: number | '';
-  quantity: number;
-};
-
-const [saleItems, setSaleItems] = useState<SaleItemForm[]>([
-  { product_id: '', quantity: 1 },
-]);
+  const [saleItems, setSaleItems] = useState<SaleItemForm[]>([
+    { product_id: '', quantity: 1 },
+  ]);
 
   const [formErrors, setFormErrors] = useState({
-  customer_id: '',
-  product_id: '',
-  quantity: '',
-});
+    customer_id: '',
+    product_id: '',
+    quantity: '',
+    credit: '',
+  });
 
-const [sales, setSales] = useState<Sale[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
 
   const fetchData = async () => {
     try {
       const [customersData, productsData, salesData] = await Promise.all([
-  getCustomers(),
-  getProducts(),
-  getSales(),
-]);
+        getCustomers(),
+        getProducts(),
+        getSales(),
+      ]);
 
-setCustomers(customersData);
-setProducts(productsData.filter((p) => p.is_active !== false));
-setSales(salesData);
-setError(null);
+      setCustomers(customersData);
+      setProducts(productsData.filter((p) => p.is_active !== false));
+      setSales(salesData);
+      setError(null);
     } catch {
       setError('Error al cargar datos para ventas');
     } finally {
@@ -54,125 +59,149 @@ setError(null);
   };
 
   const addSaleItemRow = () => {
-  setSaleItems((prev) => [...prev, { product_id: '', quantity: 1 }]);
-};
-
-  const validateForm = () => {
-  const errors = {
-    customer_id: '',
-    product_id: '',
-    quantity: '',
+    setSaleItems((prev) => [...prev, { product_id: '', quantity: 1 }]);
   };
 
-  if (!formData.customer_id) {
-    errors.customer_id = 'El cliente es obligatorio';
-  }
-
-  if (saleItems.length === 0) {
-  errors.product_id = 'Debes agregar al menos un producto';
-}
-
-const hasEmptyProduct = saleItems.some((item) => !item.product_id);
-if (hasEmptyProduct) {
-  errors.product_id = 'El producto es obligatorio';
-}
-
-const hasInvalidQuantity = saleItems.some((item) => item.quantity <= 0);
-if (hasInvalidQuantity) {
-  errors.quantity = 'La cantidad debe ser mayor a 0';
-}
-
-const hasInsufficientStock = saleItems.some((item) => {
-  const selectedProduct = getProductById(item.product_id);
-  if (!selectedProduct) return false;
-  return item.quantity > selectedProduct.stock;
-});
-
-if (hasInsufficientStock) {
-  errors.quantity = 'No hay suficiente stock disponible';
-}
-
-  setFormErrors(errors);
-
-  return !errors.customer_id && !errors.product_id && !errors.quantity;
-};
-
   const removeSaleItemRow = (index: number) => {
-  setSaleItems((prev) => prev.filter((_, i) => i !== index));
-};
+    setSaleItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const updateSaleItem = (
-  index: number,
-  field: keyof SaleItemForm,
-  value: number | ''
-) => {
-  setSaleItems((prev) =>
-    prev.map((item, i) =>
-      i === index
-        ? {
-            ...item,
-            [field]: field === 'quantity' ? Number(value) || 0 : value,
-          }
-        : item
-    )
-  );
-};
+    index: number,
+    field: keyof SaleItemForm,
+    value: number | ''
+  ) => {
+    setSaleItems((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              [field]: field === 'quantity' ? Number(value) || 0 : value,
+            }
+          : item
+      )
+    );
+  };
 
   const getProductById = (productId: number | '') => {
-  if (productId === '') return null;
-  return products.find((product) => product.id === productId) ?? null;
-};
+    if (productId === '') return null;
+    return products.find((product) => product.id === productId) ?? null;
+  };
 
   const getItemSubtotal = (item: SaleItemForm) => {
-  const product = getProductById(item.product_id);
+    const product = getProductById(item.product_id);
 
-  if (!product) return 0;
+    if (!product) return 0;
 
-  return product.sale_price * item.quantity;
-};
+    return product.sale_price * item.quantity;
+  };
 
   const saleTotal = saleItems.reduce((total, item) => {
-  return total + getItemSubtotal(item);
-}, 0);
+    return total + getItemSubtotal(item);
+  }, 0);
+
+  const validateForm = () => {
+    const errors = {
+  customer_id: '',
+  product_id: '',
+  quantity: '',
+  credit: '',
+};
+
+    if (!formData.customer_id) {
+      errors.customer_id = 'El cliente es obligatorio';
+    }
+
+    if (saleItems.length === 0) {
+      errors.product_id = 'Debes agregar al menos un producto';
+    }
+
+    const hasEmptyProduct = saleItems.some((item) => !item.product_id);
+    if (hasEmptyProduct) {
+      errors.product_id = 'El producto es obligatorio';
+    }
+
+    const hasInvalidQuantity = saleItems.some((item) => item.quantity <= 0);
+    if (hasInvalidQuantity) {
+      errors.quantity = 'La cantidad debe ser mayor a 0';
+    }
+
+    const hasInsufficientStock = saleItems.some((item) => {
+      const selectedProduct = getProductById(item.product_id);
+      if (!selectedProduct) return false;
+      return item.quantity > selectedProduct.stock;
+    });
+
+    if (hasInsufficientStock) {
+      errors.quantity = 'No hay suficiente stock disponible';
+    }
+
+  if (formData.is_credit) {
+  if (Number(formData.number_of_payments) <= 0) {
+    errors.credit = 'El número de pagos debe ser mayor a 0';
+  }
+
+  if (!errors.credit && formData.payment_frequency === 'none') {
+    errors.credit = 'Selecciona una frecuencia de pago';
+  }
+
+  if (!errors.credit && Number(formData.down_payment) < 0) {
+    errors.credit = 'El enganche no puede ser negativo';
+  }
+
+  if (!errors.credit && Number(formData.down_payment) > saleTotal) {
+    errors.credit = 'El enganche no puede ser mayor al total de la venta';
+  }
+}
+
+    setFormErrors(errors);
+
+    return !errors.customer_id && !errors.product_id && !errors.quantity;
+  };
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const handleCreateSale = async () => {
-      if (!validateForm()) return;
+    if (!validateForm()) return;
+
     try {
-     const items = saleItems.map((item) => {
-  const selectedProduct = getProductById(item.product_id);
+      const items = saleItems.map((item) => {
+        const selectedProduct = getProductById(item.product_id);
 
-  if (!selectedProduct) {
-    throw new Error('Selecciona un producto válido');
-  }
+        if (!selectedProduct) {
+          throw new Error('Selecciona un producto válido');
+        }
 
-  return {
-    product_id: selectedProduct.id,
-    quantity: item.quantity,
-    unit_price: selectedProduct.sale_price,
-  };
-});
+        return {
+          product_id: selectedProduct.id,
+          quantity: item.quantity,
+          unit_price: selectedProduct.sale_price,
+        };
+      });
 
       await createSale({
         customer_id: Number(formData.customer_id),
         user_id: 1,
         payment_type: formData.payment_type,
         items,
-        is_credit: false,
-        down_payment: 0,
-        number_of_payments: 0,
-        payment_frequency: 'none',
+        is_credit: formData.is_credit,
+        down_payment: Number(formData.down_payment),
+        number_of_payments: Number(formData.number_of_payments),
+        payment_frequency: formData.payment_frequency,
       });
 
       setFormData({
-  customer_id: '',
-  payment_type: 'cash',
-});
+        customer_id: '',
+        payment_type: 'cash',
+        is_credit: false,
+        down_payment: '0',
+        number_of_payments: '0',
+        payment_frequency: 'none',
+      });
 
-setSaleItems([{ product_id: '', quantity: 1 }]);
+      setSaleItems([{ product_id: '', quantity: 1 }]);
 
       alert('Venta registrada correctamente');
       await fetchData();
@@ -199,7 +228,6 @@ setSaleItems([{ product_id: '', quantity: 1 }]);
                 setFormErrors({ ...formErrors, customer_id: '' });
               }}
             >
-
               <option value="">Selecciona un cliente</option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
@@ -207,141 +235,223 @@ setSaleItems([{ product_id: '', quantity: 1 }]);
                 </option>
               ))}
             </select>
-              {formErrors.customer_id && <p>{formErrors.customer_id}</p>}
+            {formErrors.customer_id && <p>{formErrors.customer_id}</p>}
           </div>
 
           <div>
-  <label>Productos</label>
+            <label>Productos</label>
 
-  {saleItems.map((item, index) => {
-    const selectedProduct = getProductById(item.product_id);
+            {saleItems.map((item, index) => {
+              const selectedProduct = getProductById(item.product_id);
 
-    return (
-      <div key={index} style={{ marginBottom: '1rem', padding: '0.75rem', border: '1px solid #ccc' }}>
-        <select
-          value={item.product_id}
-          onChange={(e) => {
-            updateSaleItem(
-              index,
-              'product_id',
-              e.target.value ? Number(e.target.value) : ''
-            );
-            setFormErrors({ ...formErrors, product_id: '' });
-          }}
-        >
-          <option value="">Selecciona un producto</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </select>
+              return (
+                <div
+                  key={index}
+                  style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem',
+                    border: '1px solid #ccc',
+                  }}
+                >
+                  <select
+                    value={item.product_id}
+                    onChange={(e) => {
+                      updateSaleItem(
+                        index,
+                        'product_id',
+                        e.target.value ? Number(e.target.value) : ''
+                      );
+                      setFormErrors({ ...formErrors, product_id: '' });
+                    }}
+                  >
+                    <option value="">Selecciona un producto</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
 
-        {selectedProduct && (
-          <div>
-            <p>Precio: ${selectedProduct.sale_price}</p>
-            <p>Stock disponible: {selectedProduct.stock}</p>
+                  {selectedProduct && (
+                    <div>
+                      <p>Precio: ${selectedProduct.sale_price}</p>
+                      <p>Stock disponible: {selectedProduct.stock}</p>
+                    </div>
+                  )}
+
+                  {saleItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeSaleItemRow(index)}
+                    >
+                      Quitar producto
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            <button type="button" onClick={addSaleItemRow}>
+              Agregar producto
+            </button>
+
+            {formErrors.product_id && <p>{formErrors.product_id}</p>}
           </div>
-        )}
-
-        {saleItems.length > 1 && (
-          <button type="button" onClick={() => removeSaleItemRow(index)}>
-            Quitar producto
-          </button>
-        )}
-      </div>
-    );
-  })}
-
-  <button type="button" onClick={addSaleItemRow}>
-    Agregar producto
-  </button>
-
-  {formErrors.product_id && <p>{formErrors.product_id}</p>}
-</div>
 
           <div>
-  <label>Cantidades y subtotales</label>
+            <label>Cantidades y subtotales</label>
 
-  {saleItems.map((item, index) => {
-    const selectedProduct = getProductById(item.product_id);
-    const subtotal = getItemSubtotal(item);
+            {saleItems.map((item, index) => {
+              const selectedProduct = getProductById(item.product_id);
+              const subtotal = getItemSubtotal(item);
 
-    return (
-      <div key={index} style={{ marginBottom: '1rem' }}>
-        <input
-          type="number"
-          min="1"
-          value={item.quantity}
-          onChange={(e) => {
-            updateSaleItem(index, 'quantity', Number(e.target.value));
-            setFormErrors({ ...formErrors, quantity: '' });
-          }}
-          placeholder="Cantidad"
-        />
+              return (
+                <div key={index} style={{ marginBottom: '1rem' }}>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      updateSaleItem(index, 'quantity', Number(e.target.value));
+                      setFormErrors({ ...formErrors, quantity: '' });
+                    }}
+                    placeholder="Cantidad"
+                  />
 
-        <p>Subtotal: ${subtotal}</p>
+                  <p>Subtotal: ${subtotal}</p>
 
-        {selectedProduct && Number(item.quantity) > selectedProduct.stock && (
-          <p>No hay suficiente stock disponible</p>
-        )}
-      </div>
-    );
-  })}
+                  {selectedProduct &&
+                    Number(item.quantity) > selectedProduct.stock && (
+                      <p>No hay suficiente stock disponible</p>
+                    )}
+                </div>
+              );
+            })}
 
-  {formErrors.quantity && <p>{formErrors.quantity}</p>}
-</div>
+            {formErrors.quantity && <p>{formErrors.quantity}</p>}
+          </div>
 
+          <p>Total estimado de la venta: ${saleTotal}</p>
 
-         <p>Total estimado de la venta: ${saleTotal}</p>
+          {formData.is_credit && (
+            <div>
+              <div>
+                <label>Enganche</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.down_payment}
+                  onChange={(e) =>
+                    setFormData({ ...formData, down_payment: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label>Número de pagos</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.number_of_payments}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      number_of_payments: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div>
+                <label>Frecuencia de pago</label>
+                <select
+                  value={formData.payment_frequency}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      payment_frequency: e.target.value,
+                    })
+                  }
+                >
+                  <option value="none">Selecciona una frecuencia</option>
+                  <option value="weekly">Semanal</option>
+                  <option value="biweekly">Quincenal</option>
+                  <option value="monthly">Mensual</option>
+                </select>
+              </div>
+              {formErrors.credit && <p>{formErrors.credit}</p>}
+              <p>
+  Saldo financiado estimado: $
+  {Math.max(saleTotal - Number(formData.down_payment), 0)}
+</p>
+              <p>
+  Monto estimado por pago: $
+  {Number(formData.number_of_payments) > 0
+    ? Math.max(saleTotal - Number(formData.down_payment), 0) /
+      Number(formData.number_of_payments)
+    : 0}
+</p>
+            </div>
+          )}
 
           <div>
             <label>Tipo de pago</label>
             <select
               value={formData.payment_type}
-              onChange={(e) =>
-                setFormData({ ...formData, payment_type: e.target.value })
-              }
+              onChange={(e) => {
+  const isCredit = e.target.value === 'credit';
+
+  setFormData({
+    ...formData,
+    payment_type: e.target.value,
+    is_credit: isCredit,
+    down_payment: isCredit ? formData.down_payment : '0',
+    number_of_payments: isCredit ? formData.number_of_payments : '0',
+    payment_frequency: isCredit ? formData.payment_frequency : 'none',
+  });
+}}
             >
               <option value="cash">Contado</option>
+              <option value="credit">Crédito</option>
             </select>
           </div>
 
           <button onClick={handleCreateSale}>Registrar venta</button>
+
           <h3>Ventas registradas</h3>
 
-<table style={{ width: '100%', marginTop: '1rem' }}>
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Cliente</th>
-      <th>Producto(s)</th>
-      <th>Total</th>
-      <th>Estado</th>
-      <th>Fecha</th>
-    </tr>
-  </thead>
-  <tbody>
-    {sales.map((sale) => (
-      <tr key={sale.id}>
-        <td>{sale.id}</td>
-        <td>
-  {sale.customer
-    ? `${sale.customer.first_name} ${sale.customer.last_name ?? ''}`.trim()
-    : '-'}
-</td>
-<td>
-  {sale.items.length > 0
-    ? sale.items.map((item) => item.product.name).join(', ')
-    : '-'}
-</td>
-<td>{sale.total_amount}</td>
-        <td>{sale.status}</td>
-        <td>{sale.created_at}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+          <table style={{ width: '100%', marginTop: '1rem' }}>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Producto(s)</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sales.map((sale) => (
+                <tr key={sale.id}>
+                  <td>{sale.id}</td>
+                  <td>
+                    {sale.customer
+                      ? `${sale.customer.first_name} ${sale.customer.last_name ?? ''}`.trim()
+                      : '-'}
+                  </td>
+                  <td>
+                    {sale.items.length > 0
+                      ? sale.items.map((item) => item.product.name).join(', ')
+                      : '-'}
+                  </td>
+                  <td>{sale.total_amount}</td>
+                  <td>{sale.status}</td>
+                  <td>{sale.created_at}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
