@@ -7,6 +7,7 @@ import {
   type PaymentSchedule,
 } from '../../services/creditService';
 import { getPayments, type Payment } from '../../services/paymentService';
+import { getCustomers, type Customer } from '../../services/clientService';
 import KpiCard from '../dashboard/KpiCard';
 import DashboardPanel from '../dashboard/DashboardPanel';
 import SimpleTable from '../dashboard/SimpleTable';
@@ -14,32 +15,31 @@ import StatusBadge from '../dashboard/StatusBadge';
 import AlertList from '../dashboard/AlertList';
 import FeaturedProductCard from '../dashboard/FeaturedProductCard';
 import MessageList from '../dashboard/MessageList';
-import { getCustomers, type Customer } from '../../services/clientService';
 
 const DashboardModule: React.FC = () => {
   const [activeCredits, setActiveCredits] = useState<Credit[]>([]);
   const [upcomingPayments, setUpcomingPayments] = useState<PaymentSchedule[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-          const [creditsData, upcomingData, paymentsData, customersData] =
-              await Promise.all([
-                getActiveCredits(),
-                getUpcomingPayments(),
-                getPayments(),
-                getCustomers(),
-              ]);
+        const [creditsData, upcomingData, paymentsData, customersData] =
+          await Promise.all([
+            getActiveCredits(),
+            getUpcomingPayments(),
+            getPayments(),
+            getCustomers(),
+          ]);
 
         setActiveCredits(creditsData);
         setUpcomingPayments(upcomingData);
         setPayments(paymentsData);
-        setError(null);
         setCustomers(customersData);
+        setError(null);
       } catch {
         setError('No se pudieron cargar los datos del dashboard');
       } finally {
@@ -74,7 +74,7 @@ const DashboardModule: React.FC = () => {
     .filter((payment) => payment.due_date.split('T')[0] >= todayDateString)
     .reduce((sum, payment) => sum + payment.amount_due, 0);
 
-    const getCustomerNameByCreditId = (creditId: number): string => {
+  const getCustomerNameByCreditId = (creditId: number): string => {
     const credit = activeCredits.find((item) => item.id === creditId);
 
     if (!credit) {
@@ -121,7 +121,7 @@ const DashboardModule: React.FC = () => {
       ),
   }));
 
-    const vencidos = upcomingPayments.filter(
+  const vencidos = upcomingPayments.filter(
     (payment) =>
       payment.status.toLowerCase() !== 'paid' &&
       payment.due_date.split('T')[0] < todayDateString
@@ -191,14 +191,14 @@ const DashboardModule: React.FC = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <h2>Dashboard de cobranza</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <h2 style={{ margin: 0 }}>Dashboard de cobranza</h2>
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: '1rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '0.85rem',
         }}
       >
         <KpiCard
@@ -235,8 +235,8 @@ const DashboardModule: React.FC = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
-          gap: '1rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '0.85rem',
         }}
       >
         <DashboardPanel title="Próximos pagos">
@@ -247,22 +247,21 @@ const DashboardModule: React.FC = () => {
         </DashboardPanel>
 
         <DashboardPanel title="Alertas">
-  {alertItems.length > 0 ? (
-    <AlertList items={alertItems} />
-  ) : (
-    <p style={{ margin: 0, color: '#8c8c8c' }}>
-      No hay alertas activas por el momento.
-    </p>
-  )}
-</DashboardPanel>
-          
+          {alertItems.length > 0 ? (
+            <AlertList items={alertItems} />
+          ) : (
+            <p style={{ margin: 0, color: '#8c8c8c' }}>
+              No hay alertas activas por el momento.
+            </p>
+          )}
+        </DashboardPanel>
       </div>
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '0.85rem',
         }}
       >
         <DashboardPanel title="Producto estrella">
