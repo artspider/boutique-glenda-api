@@ -10,21 +10,22 @@ import SalesSectionCard from './sales/SalesSectionCard';
    TIPOS DEL MÓDULO
 ========================================================= */
 
-type SaleItemForm = {
+type SaleType = 'immediate' | 'installments';
+
+type ProductSelectionForm = {
   product_id: number | '';
   quantity: number;
 };
 
-type SaleType = 'immediate' | 'installments';
+type CartItem = {
+  product_id: number;
+  quantity: number;
+};
 
 /* =========================================================
    HELPERS / UTILIDADES
 ========================================================= */
 
-/**
- * Formatea números como moneda MXN para mostrar importes
- * de forma consistente en toda la interfaz.
- */
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
@@ -34,12 +35,162 @@ const formatCurrency = (value: number) => {
 };
 
 /* =========================================================
+   ESTILOS COMPACTOS BASE
+========================================================= */
+
+const styles = {
+  page: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '1rem',
+  },
+  infoBox: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    padding: '0.85rem 1rem',
+  },
+  errorBox: {
+    backgroundColor: '#fef2f2',
+    border: '1px solid #fecaca',
+    borderRadius: '12px',
+    padding: '0.85rem 1rem',
+  },
+  mainGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)',
+    gap: '1rem',
+    alignItems: 'start' as const,
+  },
+  column: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '1rem',
+  },
+  label: {
+    display: 'block',
+    marginBottom: '0.35rem',
+    fontWeight: 600,
+    color: '#334155',
+    fontSize: '0.88rem',
+  },
+  input: {
+    width: '100%',
+    border: '1px solid #cbd5e1',
+    borderRadius: '10px',
+    padding: '0.65rem 0.8rem',
+    backgroundColor: '#ffffff',
+    fontSize: '0.9rem',
+    boxSizing: 'border-box' as const,
+  },
+  miniCard: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '0.75rem 0.85rem',
+  },
+  miniCardLabel: {
+    margin: 0,
+    marginBottom: '0.25rem',
+    color: '#64748b',
+    fontSize: '0.8rem',
+  },
+  miniCardValue: {
+    color: '#0f172a',
+    fontSize: '0.92rem',
+    fontWeight: 700,
+  },
+  primaryButton: {
+    border: 'none',
+    borderRadius: '10px',
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    padding: '0.72rem 0.95rem',
+    fontWeight: 700,
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+  },
+  secondaryButton: {
+    border: '1px solid #bfdbfe',
+    backgroundColor: '#eff6ff',
+    color: '#1d4ed8',
+    borderRadius: '10px',
+    padding: '0.7rem 0.95rem',
+    fontWeight: 600,
+    fontSize: '0.88rem',
+    cursor: 'pointer',
+  },
+  dangerButton: {
+    border: '1px solid #fecaca',
+    backgroundColor: '#ffffff',
+    color: '#dc2626',
+    borderRadius: '9px',
+    padding: '0.5rem 0.8rem',
+    cursor: 'pointer',
+    fontSize: '0.82rem',
+    fontWeight: 600,
+  },
+  softPanel: {
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    padding: '0.85rem',
+    backgroundColor: '#f8fafc',
+  },
+  chip: {
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    color: '#1d4ed8',
+    borderRadius: '999px',
+    padding: '0.25rem 0.65rem',
+    fontSize: '0.78rem',
+    fontWeight: 600,
+  },
+  neutralChip: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '999px',
+    padding: '0.2rem 0.55rem',
+    fontSize: '0.78rem',
+    color: '#475569',
+  },
+  errorText: {
+    margin: 0,
+    color: '#dc2626',
+    fontSize: '0.82rem',
+  },
+  summaryBox: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '0.75rem 0.85rem',
+  },
+  summaryAccentBox: {
+    backgroundColor: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    borderRadius: '10px',
+    padding: '0.75rem 0.85rem',
+  },
+  summaryWarmBox: {
+    backgroundColor: '#fff7ed',
+    border: '1px solid #fdba74',
+    borderRadius: '10px',
+    padding: '0.75rem 0.85rem',
+  },
+  summaryWarnBox: {
+    backgroundColor: '#fefce8',
+    border: '1px solid #fde68a',
+    borderRadius: '10px',
+    padding: '0.75rem 0.85rem',
+  },
+};
+
+/* =========================================================
    COMPONENTE PRINCIPAL
 ========================================================= */
 
 const VentasModule: React.FC = () => {
   /* =========================================================
-     ESTADOS PRINCIPALES DEL MÓDULO
+     ESTADOS PRINCIPALES
   ========================================================= */
 
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -55,26 +206,24 @@ const VentasModule: React.FC = () => {
     payment_frequency: 'none',
   });
 
-  const [saleItems, setSaleItems] = useState<SaleItemForm[]>([
-    { product_id: '', quantity: 1 },
-  ]);
+  const [productForm, setProductForm] = useState<ProductSelectionForm>({
+    product_id: '',
+    quantity: 1,
+  });
+
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const [formErrors, setFormErrors] = useState({
     customer_id: '',
-    product_id: '',
+    product: '',
     quantity: '',
     credit: '',
   });
 
   /* =========================================================
-     FUNCIONES DE CARGA DE DATOS
+     CARGA DE DATOS
   ========================================================= */
 
-  /**
-   * Carga clientes y productos necesarios para construir la venta.
-   * Mantiene el módulo aislado del historial de ventas, ya que este
-   * flujo ahora se enfoca únicamente en registrar una venta.
-   */
   const fetchData = async () => {
     try {
       const [customersData, productsData] = await Promise.all([
@@ -92,115 +241,123 @@ const VentasModule: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   /* =========================================================
-     FUNCIONES DE MANEJO DEL CARRITO / ITEMS DE VENTA
+     HELPERS DE PRODUCTOS Y CARRITO
   ========================================================= */
 
-  /**
-   * Agrega una nueva fila vacía de producto al formulario de venta.
-   */
-  const addSaleItemRow = () => {
-    setSaleItems((prev) => [...prev, { product_id: '', quantity: 1 }]);
-  };
-
-  /**
-   * Elimina una fila de producto por índice.
-   */
-  const removeSaleItemRow = (index: number) => {
-    setSaleItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  /**
-   * Actualiza una propiedad específica de una fila de producto.
-   * Se usa para cambiar producto o cantidad sin romper el resto del item.
-   */
-  const updateSaleItem = (
-    index: number,
-    field: keyof SaleItemForm,
-    value: number | ''
-  ) => {
-    setSaleItems((prev) =>
-      prev.map((item, i) =>
-        i === index
-          ? {
-              ...item,
-              [field]: field === 'quantity' ? Number(value) || 0 : value,
-            }
-          : item
-      )
-    );
-  };
-
-  /**
-   * Recupera el producto completo a partir de su id.
-   */
   const getProductById = (productId: number | '') => {
     if (productId === '') return null;
     return products.find((product) => product.id === productId) ?? null;
   };
 
-  /**
-   * Calcula el subtotal de una fila del carrito.
-   */
-  const getItemSubtotal = (item: SaleItemForm) => {
+  const selectedProduct = useMemo(() => {
+    return getProductById(productForm.product_id);
+  }, [productForm.product_id, products]);
+
+  const getCartItemSubtotal = (item: CartItem) => {
     const product = getProductById(item.product_id);
-
     if (!product) return 0;
-
     return product.sale_price * item.quantity;
   };
 
-  /* =========================================================
-     CÁLCULOS DERIVADOS IMPORTANTES
-  ========================================================= */
-
-  /**
-   * Total estimado de la venta.
-   */
-  const saleTotal = saleItems.reduce((total, item) => {
-    return total + getItemSubtotal(item);
+  const saleTotal = cartItems.reduce((total, item) => {
+    return total + getCartItemSubtotal(item);
   }, 0);
 
-  /**
-   * Nombre del cliente seleccionado para mostrarlo en el resumen.
-   */
   const selectedCustomerName = useMemo(() => {
     const customer = customers.find((item) => item.id === Number(formData.customer_id));
     if (!customer) return 'Sin cliente seleccionado';
     return `${customer.first_name} ${customer.last_name ?? ''}`.trim();
   }, [customers, formData.customer_id]);
 
-  /**
-   * Saldo financiado cuando la venta es a plazos.
-   */
   const financedBalance = Math.max(saleTotal - Number(formData.down_payment), 0);
 
-  /**
-   * Monto estimado por pago para ventas a plazos.
-   */
   const estimatedPaymentAmount =
     Number(formData.number_of_payments) > 0
       ? financedBalance / Number(formData.number_of_payments)
       : 0;
 
-  /**
-   * Cuenta solo los productos válidos seleccionados en el carrito.
-   */
-  const validItemsCount = saleItems.filter((item) => item.product_id !== '').length;
-
   /* =========================================================
-     VALIDACIONES IMPORTANTES DEL MÓDULO
+     FUNCIONES IMPORTANTES DE CAPTURA Y CARRITO
   ========================================================= */
 
-  /**
-   * Valida el formulario completo antes de registrar la venta.
-   * Incluye validación de cliente, productos, cantidades, stock
-   * y reglas específicas cuando la venta es a plazos.
-   */
+  const resetProductForm = () => {
+    setProductForm({
+      product_id: '',
+      quantity: 1,
+    });
+  };
+
+  const handleAddToCart = () => {
+    const product = getProductById(productForm.product_id);
+
+    setFormErrors((prev) => ({
+      ...prev,
+      product: '',
+      quantity: '',
+    }));
+
+    if (!product) {
+      setFormErrors((prev) => ({
+        ...prev,
+        product: 'Debes seleccionar un producto',
+      }));
+      return;
+    }
+
+    if (productForm.quantity <= 0) {
+      setFormErrors((prev) => ({
+        ...prev,
+        quantity: 'La cantidad debe ser mayor a 0',
+      }));
+      return;
+    }
+
+    const existingItem = cartItems.find((item) => item.product_id === product.id);
+    const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+    const requestedTotalQuantity = currentCartQuantity + productForm.quantity;
+
+    if (requestedTotalQuantity > product.stock) {
+      setFormErrors((prev) => ({
+        ...prev,
+        quantity: 'No hay suficiente stock disponible',
+      }));
+      return;
+    }
+
+    setCartItems((prev) => {
+      const itemExists = prev.some((item) => item.product_id === product.id);
+
+      if (itemExists) {
+        return prev.map((item) =>
+          item.product_id === product.id
+            ? { ...item, quantity: item.quantity + productForm.quantity }
+            : item
+        );
+      }
+
+      return [...prev, { product_id: product.id, quantity: productForm.quantity }];
+    });
+
+    resetProductForm();
+  };
+
+  const handleRemoveCartItem = (index: number) => {
+    setCartItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /* =========================================================
+     VALIDACIÓN GENERAL DE LA VENTA
+  ========================================================= */
+
   const validateForm = () => {
     const errors = {
       customer_id: '',
-      product_id: '',
+      product: '',
       quantity: '',
       credit: '',
     };
@@ -209,24 +366,14 @@ const VentasModule: React.FC = () => {
       errors.customer_id = 'El cliente es obligatorio';
     }
 
-    if (saleItems.length === 0) {
-      errors.product_id = 'Debes agregar al menos un producto';
+    if (cartItems.length === 0) {
+      errors.product = 'Debes agregar al menos un producto al carrito';
     }
 
-    const hasEmptyProduct = saleItems.some((item) => !item.product_id);
-    if (hasEmptyProduct) {
-      errors.product_id = 'El producto es obligatorio';
-    }
-
-    const hasInvalidQuantity = saleItems.some((item) => item.quantity <= 0);
-    if (hasInvalidQuantity) {
-      errors.quantity = 'La cantidad debe ser mayor a 0';
-    }
-
-    const hasInsufficientStock = saleItems.some((item) => {
-      const selectedProduct = getProductById(item.product_id);
-      if (!selectedProduct) return false;
-      return item.quantity > selectedProduct.stock;
+    const hasInsufficientStock = cartItems.some((item) => {
+      const selectedCartProduct = getProductById(item.product_id);
+      if (!selectedCartProduct) return false;
+      return item.quantity > selectedCartProduct.stock;
     });
 
     if (hasInsufficientStock) {
@@ -253,46 +400,28 @@ const VentasModule: React.FC = () => {
 
     setFormErrors(errors);
 
-    return !errors.customer_id && !errors.product_id && !errors.quantity && !errors.credit;
+    return !errors.customer_id && !errors.product && !errors.quantity && !errors.credit;
   };
 
   /* =========================================================
-     EFECTOS DEL COMPONENTE
+     REGISTRO DE LA VENTA
   ========================================================= */
 
-  /**
-   * Carga inicial del módulo.
-   */
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  /* =========================================================
-     FUNCIÓN PRINCIPAL DE REGISTRO DE VENTA
-  ========================================================= */
-
-  /**
-   * Construye el payload final y registra la venta contra el backend.
-   * Aquí hacemos el mapeo entre la semántica del frontend:
-   * - immediate / installments
-   * y el contrato actual del backend:
-   * - payment_type / is_credit
-   */
   const handleCreateSale = async () => {
     if (!validateForm()) return;
 
     try {
-      const items = saleItems.map((item) => {
-        const selectedProduct = getProductById(item.product_id);
+      const items = cartItems.map((item) => {
+        const selectedCartProduct = getProductById(item.product_id);
 
-        if (!selectedProduct) {
+        if (!selectedCartProduct) {
           throw new Error('Selecciona un producto válido');
         }
 
         return {
-          product_id: selectedProduct.id,
+          product_id: selectedCartProduct.id,
           quantity: item.quantity,
-          unit_price: selectedProduct.sale_price,
+          unit_price: selectedCartProduct.sale_price,
         };
       });
 
@@ -315,7 +444,8 @@ const VentasModule: React.FC = () => {
         payment_frequency: 'none',
       });
 
-      setSaleItems([{ product_id: '', quantity: 1 }]);
+      setCartItems([]);
+      resetProductForm();
 
       alert('Venta registrada correctamente');
       await fetchData();
@@ -325,69 +455,31 @@ const VentasModule: React.FC = () => {
   };
 
   /* =========================================================
-     RENDER DEL MÓDULO
+     RENDER
   ========================================================= */
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-
-      {/* =========================================================
-          INICIO — ESTADO DE CARGA
-      ========================================================= */}
+    <div style={styles.page}>
       {loading && (
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '16px',
-            padding: '1rem 1.25rem',
-          }}
-        >
-          <p style={{ margin: 0, color: '#475569' }}>Cargando datos...</p>
+        <div style={styles.infoBox}>
+          <p style={{ margin: 0, color: '#475569', fontSize: '0.9rem' }}>Cargando datos...</p>
         </div>
       )}
-      {/* =========================================================
-          FIN — ESTADO DE CARGA
-      ========================================================= */}
 
-      {/* =========================================================
-          INICIO — ESTADO DE ERROR
-      ========================================================= */}
       {error && (
-        <div
-          style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '16px',
-            padding: '1rem 1.25rem',
-          }}
-        >
-          <p style={{ margin: 0, color: '#b91c1c' }}>{error}</p>
+        <div style={styles.errorBox}>
+          <p style={{ margin: 0, color: '#b91c1c', fontSize: '0.9rem' }}>{error}</p>
         </div>
       )}
-      {/* =========================================================
-          FIN — ESTADO DE ERROR
-      ========================================================= */}
 
-      {/* =========================================================
-          INICIO — CONTENIDO PRINCIPAL DEL MÓDULO
-      ========================================================= */}
       {!loading && !error && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 2fr) minmax(320px, 1fr)',
-            gap: '1.5rem',
-            alignItems: 'start',
-          }}
-        >
+        <div style={styles.mainGrid}>
           {/* =========================================================
-              INICIO — COLUMNA IZQUIERDA
+              COLUMNA IZQUIERDA
           ========================================================= */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={styles.column}>
             {/* =========================================================
-                INICIO — APARTADO DATOS DE VENTA
+                DATOS DE VENTA
             ========================================================= */}
             <SalesSectionCard
               title="Datos de venta"
@@ -396,34 +488,19 @@ const VentasModule: React.FC = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                  gap: '1rem',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: '0.85rem',
                 }}
               >
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      marginBottom: '0.5rem',
-                      fontWeight: 600,
-                      color: '#334155',
-                    }}
-                  >
-                    Cliente
-                  </label>
+                  <label style={styles.label}>Cliente</label>
                   <select
                     value={formData.customer_id}
                     onChange={(e) => {
                       setFormData({ ...formData, customer_id: e.target.value });
                       setFormErrors({ ...formErrors, customer_id: '' });
                     }}
-                    style={{
-                      width: '100%',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '12px',
-                      padding: '0.85rem 1rem',
-                      backgroundColor: '#ffffff',
-                    }}
+                    style={styles.input}
                   >
                     <option value="">Selecciona un cliente</option>
                     {customers.map((customer) => (
@@ -433,23 +510,14 @@ const VentasModule: React.FC = () => {
                     ))}
                   </select>
                   {formErrors.customer_id && (
-                    <p style={{ marginTop: '0.5rem', color: '#dc2626', fontSize: '0.9rem' }}>
+                    <p style={{ ...styles.errorText, marginTop: '0.4rem' }}>
                       {formErrors.customer_id}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      marginBottom: '0.5rem',
-                      fontWeight: 600,
-                      color: '#334155',
-                    }}
-                  >
-                    Tipo de venta
-                  </label>
+                  <label style={styles.label}>Tipo de venta</label>
                   <select
                     value={formData.sale_type}
                     onChange={(e) => {
@@ -470,13 +538,7 @@ const VentasModule: React.FC = () => {
                             : 'none',
                       });
                     }}
-                    style={{
-                      width: '100%',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '12px',
-                      padding: '0.85rem 1rem',
-                      backgroundColor: '#ffffff',
-                    }}
+                    style={styles.input}
                   >
                     <option value="immediate">Pago inmediato</option>
                     <option value="installments">Venta a plazos</option>
@@ -484,301 +546,171 @@ const VentasModule: React.FC = () => {
                 </div>
               </div>
             </SalesSectionCard>
-            {/* =========================================================
-                FIN — APARTADO DATOS DE VENTA
-            ========================================================= */}
 
             {/* =========================================================
-                INICIO — APARTADO SELECCIÓN DE PRODUCTO
+                SELECCIÓN DE PRODUCTO
             ========================================================= */}
             <SalesSectionCard
-  title="Selección de producto"
-  subtitle="Captura los productos que formarán parte de la venta."
->
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-    {saleItems.map((item, index) => {
-      const selectedProduct = getProductById(item.product_id);
-      const subtotal = getItemSubtotal(item);
-
-      return (
-        <div
-          key={index}
-          style={{
-            border: '1px solid #e2e8f0',
-            borderRadius: '14px',
-            padding: '1rem',
-            backgroundColor: '#f8fafc',
-          }}
-        >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 2fr) minmax(120px, 120px)',
-              gap: '1rem',
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  marginBottom: '0.5rem',
-                  fontWeight: 600,
-                  color: '#334155',
-                }}
-              >
-                Producto
-              </label>
-              <select
-                value={item.product_id}
-                onChange={(e) => {
-                  updateSaleItem(
-                    index,
-                    'product_id',
-                    e.target.value ? Number(e.target.value) : ''
-                  );
-                  setFormErrors({ ...formErrors, product_id: '' });
-                }}
-                style={{
-                  width: '100%',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '0.85rem 1rem',
-                  backgroundColor: '#ffffff',
-                }}
-              >
-                <option value="">Selecciona un producto</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  marginBottom: '0.5rem',
-                  fontWeight: 600,
-                  color: '#334155',
-                }}
-              >
-                Cantidad
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={item.quantity}
-                onChange={(e) => {
-                  updateSaleItem(index, 'quantity', Number(e.target.value));
-                  setFormErrors({ ...formErrors, quantity: '' });
-                }}
-                style={{
-                  width: '100%',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '0.85rem 1rem',
-                  backgroundColor: '#ffffff',
-                }}
-              />
-            </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: '1rem',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-              gap: '0.75rem',
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '0.85rem 1rem',
-              }}
+              title="Selección de producto"
+              subtitle="Selecciona un producto y agrégalo al carrito."
             >
-              <p style={{ margin: 0, marginBottom: '0.35rem', color: '#64748b' }}>
-                Precio
-              </p>
-              <strong style={{ color: '#0f172a' }}>
-                {selectedProduct ? formatCurrency(selectedProduct.sale_price) : '--'}
-              </strong>
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <div style={styles.softPanel}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(0, 2fr) minmax(110px, 110px)',
+                      gap: '0.85rem',
+                    }}
+                  >
+                    <div>
+                      <label style={styles.label}>Producto</label>
+                      <select
+                        value={productForm.product_id}
+                        onChange={(e) => {
+                          setProductForm({
+                            ...productForm,
+                            product_id: e.target.value ? Number(e.target.value) : '',
+                          });
+                          setFormErrors({ ...formErrors, product: '' });
+                        }}
+                        style={styles.input}
+                      >
+                        <option value="">Selecciona un producto</option>
+                        {products.map((product) => (
+                          <option key={product.id} value={product.id}>
+                            {product.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-            <div
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '0.85rem 1rem',
-              }}
-            >
-              <p style={{ margin: 0, marginBottom: '0.35rem', color: '#64748b' }}>
-                Stock disponible
-              </p>
-              <strong style={{ color: '#0f172a' }}>
-                {selectedProduct ? selectedProduct.stock : '--'}
-              </strong>
-            </div>
+                    <div>
+                      <label style={styles.label}>Cantidad</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={productForm.quantity}
+                        onChange={(e) => {
+                          setProductForm({
+                            ...productForm,
+                            quantity: Number(e.target.value) || 1,
+                          });
+                          setFormErrors({ ...formErrors, quantity: '' });
+                        }}
+                        style={styles.input}
+                      />
+                    </div>
+                  </div>
 
-            <div
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '0.85rem 1rem',
-              }}
-            >
-              <p style={{ margin: 0, marginBottom: '0.35rem', color: '#64748b' }}>
-                Subtotal
-              </p>
-              <strong style={{ color: '#0f172a' }}>
-                {selectedProduct ? formatCurrency(subtotal) : '--'}
-              </strong>
-            </div>
-          </div>
+                  <div
+                    style={{
+                      marginTop: '0.85rem',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                      gap: '0.65rem',
+                    }}
+                  >
+                    <div style={styles.miniCard}>
+                      <p style={styles.miniCardLabel}>Precio</p>
+                      <strong style={styles.miniCardValue}>
+                        {selectedProduct ? formatCurrency(selectedProduct.sale_price) : '--'}
+                      </strong>
+                    </div>
 
-          <div
-            style={{
-              marginTop: '1rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '1rem',
-              flexWrap: 'wrap',
-            }}
-          >
-            {selectedProduct && Number(item.quantity) > selectedProduct.stock ? (
-              <p style={{ margin: 0, color: '#dc2626', fontSize: '0.9rem' }}>
-                No hay suficiente stock disponible
-              </p>
-            ) : (
-              <div />
-            )}
+                    <div style={styles.miniCard}>
+                      <p style={styles.miniCardLabel}>Stock disponible</p>
+                      <strong style={styles.miniCardValue}>
+                        {selectedProduct ? selectedProduct.stock : '--'}
+                      </strong>
+                    </div>
 
-            {saleItems.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeSaleItemRow(index)}
-                style={{
-                  border: '1px solid #fecaca',
-                  backgroundColor: '#ffffff',
-                  color: '#dc2626',
-                  borderRadius: '10px',
-                  padding: '0.65rem 1rem',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                }}
-              >
-                Quitar producto
-              </button>
-            )}
-          </div>
-        </div>
-      );
-    })}
+                    <div style={styles.miniCard}>
+                      <p style={styles.miniCardLabel}>Subtotal estimado</p>
+                      <strong style={styles.miniCardValue}>
+                        {selectedProduct
+                          ? formatCurrency(selectedProduct.sale_price * productForm.quantity)
+                          : '--'}
+                      </strong>
+                    </div>
+                  </div>
 
-    <div>
-      <button
-        type="button"
-        onClick={addSaleItemRow}
-        style={{
-          border: '1px solid #bfdbfe',
-          backgroundColor: '#eff6ff',
-          color: '#1d4ed8',
-          borderRadius: '12px',
-          padding: '0.8rem 1rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-        }}
-      >
-        Agregar producto
-      </button>
-    </div>
+                  <div
+                    style={{
+                      marginTop: '0.85rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {formErrors.product && <p style={styles.errorText}>{formErrors.product}</p>}
+                      {formErrors.quantity && (
+                        <p style={styles.errorText}>{formErrors.quantity}</p>
+                      )}
+                    </div>
 
-    {formErrors.product_id && (
-      <p style={{ margin: 0, color: '#dc2626', fontSize: '0.9rem' }}>
-        {formErrors.product_id}
-      </p>
-    )}
-
-    {formErrors.quantity && (
-      <p style={{ margin: 0, color: '#dc2626', fontSize: '0.9rem' }}>
-        {formErrors.quantity}
-      </p>
-    )}
-  </div>
-</SalesSectionCard>
-            {/* =========================================================
-                FIN — APARTADO SELECCIÓN DE PRODUCTO
-            ========================================================= */}
+                    <button type="button" onClick={handleAddToCart} style={styles.primaryButton}>
+                      Agregar al carrito
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </SalesSectionCard>
 
             {/* =========================================================
-                INICIO — APARTADO CARRITO DE VENTA
+                CARRITO DE VENTA
             ========================================================= */}
             <SalesSectionCard
               title="Carrito de venta"
-              subtitle="Revisa el detalle de los productos capturados."
+              subtitle="Revisa los productos agregados antes de registrar."
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '1rem',
+                    gap: '0.75rem',
                     flexWrap: 'wrap',
                   }}
                 >
-                  <p style={{ margin: 0, color: '#64748b' }}>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
                     Productos listos para registrar en la venta.
                   </p>
 
-                  <div
-                    style={{
-                      backgroundColor: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      color: '#1d4ed8',
-                      borderRadius: '999px',
-                      padding: '0.35rem 0.8rem',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {validItemsCount} producto{validItemsCount === 1 ? '' : 's'}
+                  <div style={styles.chip}>
+                    {cartItems.length} producto{cartItems.length === 1 ? '' : 's'}
                   </div>
                 </div>
 
-                {validItemsCount === 0 ? (
+                {cartItems.length === 0 ? (
                   <div
                     style={{
                       border: '1px dashed #cbd5e1',
-                      borderRadius: '14px',
-                      padding: '1.2rem',
+                      borderRadius: '12px',
+                      padding: '0.95rem',
                       backgroundColor: '#f8fafc',
                     }}
                   >
-                    <p style={{ margin: 0, color: '#64748b' }}>
-                      Aún no has seleccionado productos válidos para la venta.
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
+                      Aún no has agregado productos al carrito.
                     </p>
                   </div>
                 ) : (
-                  saleItems.map((item, index) => {
-                    const selectedProduct = getProductById(item.product_id);
-
-                    if (!selectedProduct) return null;
+                  cartItems.map((item, index) => {
+                    const product = getProductById(item.product_id);
+                    if (!product) return null;
 
                     return (
                       <div
-                        key={index}
+                        key={`${item.product_id}-${index}`}
                         style={{
                           border: '1px solid #e2e8f0',
-                          borderRadius: '14px',
-                          padding: '1rem',
+                          borderRadius: '12px',
+                          padding: '0.85rem',
                           backgroundColor: '#ffffff',
                         }}
                       >
@@ -786,80 +718,65 @@ const VentasModule: React.FC = () => {
                           style={{
                             display: 'flex',
                             justifyContent: 'space-between',
-                            gap: '1rem',
+                            gap: '0.85rem',
                             flexWrap: 'wrap',
                             alignItems: 'flex-start',
                           }}
                         >
                           <div style={{ flex: 1 }}>
-                            <strong style={{ color: '#0f172a', display: 'block' }}>
-                              {selectedProduct.name}
+                            <strong
+                              style={{
+                                color: '#0f172a',
+                                display: 'block',
+                                fontSize: '0.92rem',
+                              }}
+                            >
+                              {product.name}
                             </strong>
 
                             <div
                               style={{
-                                marginTop: '0.6rem',
+                                marginTop: '0.45rem',
                                 display: 'flex',
-                                gap: '0.75rem',
+                                gap: '0.5rem',
                                 flexWrap: 'wrap',
                               }}
                             >
-                              <span
-                                style={{
-                                  backgroundColor: '#f8fafc',
-                                  border: '1px solid #e2e8f0',
-                                  borderRadius: '999px',
-                                  padding: '0.25rem 0.65rem',
-                                  fontSize: '0.85rem',
-                                  color: '#475569',
-                                }}
-                              >
-                                Cantidad: {item.quantity}
-                              </span>
-
-                              <span
-                                style={{
-                                  backgroundColor: '#f8fafc',
-                                  border: '1px solid #e2e8f0',
-                                  borderRadius: '999px',
-                                  padding: '0.25rem 0.65rem',
-                                  fontSize: '0.85rem',
-                                  color: '#475569',
-                                }}
-                              >
-                                Precio: {formatCurrency(selectedProduct.sale_price)}
+                              <span style={styles.neutralChip}>Cantidad: {item.quantity}</span>
+                              <span style={styles.neutralChip}>
+                                Precio: {formatCurrency(product.sale_price)}
                               </span>
                             </div>
                           </div>
 
-                          <div style={{ minWidth: '140px', textAlign: 'right' }}>
-                            <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
+                          <div style={{ minWidth: '130px', textAlign: 'right' }}>
+                            <p
+                              style={{
+                                margin: 0,
+                                color: '#64748b',
+                                fontSize: '0.8rem',
+                              }}
+                            >
                               Subtotal
                             </p>
-                            <strong style={{ color: '#0f172a', fontSize: '1rem' }}>
-                              {formatCurrency(getItemSubtotal(item))}
+                            <strong
+                              style={{
+                                color: '#0f172a',
+                                fontSize: '0.92rem',
+                              }}
+                            >
+                              {formatCurrency(getCartItemSubtotal(item))}
                             </strong>
 
-                            {saleItems.length > 1 && (
-                              <div style={{ marginTop: '0.75rem' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => removeSaleItemRow(index)}
-                                  style={{
-                                    border: '1px solid #fecaca',
-                                    backgroundColor: '#ffffff',
-                                    color: '#dc2626',
-                                    borderRadius: '10px',
-                                    padding: '0.55rem 0.9rem',
-                                    cursor: 'pointer',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  Quitar
-                                </button>
-                              </div>
-                            )}
+                            <div style={{ marginTop: '0.6rem' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCartItem(index)}
+                                style={styles.dangerButton}
+                              >
+                                Quitar
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -868,12 +785,9 @@ const VentasModule: React.FC = () => {
                 )}
               </div>
             </SalesSectionCard>
-            {/* =========================================================
-                FIN — APARTADO CARRITO DE VENTA
-            ========================================================= */}
 
             {/* =========================================================
-                INICIO — APARTADO CONFIGURACIÓN DE PLAZOS
+                CONFIGURACIÓN DE PLAZOS
             ========================================================= */}
             {formData.sale_type === 'installments' && (
               <SalesSectionCard
@@ -883,21 +797,12 @@ const VentasModule: React.FC = () => {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    gap: '1rem',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '0.85rem',
                   }}
                 >
                   <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: '0.5rem',
-                        fontWeight: 600,
-                        color: '#334155',
-                      }}
-                    >
-                      Enganche
-                    </label>
+                    <label style={styles.label}>Enganche</label>
                     <input
                       type="number"
                       min="0"
@@ -905,27 +810,12 @@ const VentasModule: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, down_payment: e.target.value })
                       }
-                      style={{
-                        width: '100%',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '12px',
-                        padding: '0.85rem 1rem',
-                        backgroundColor: '#ffffff',
-                      }}
+                      style={styles.input}
                     />
                   </div>
 
                   <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: '0.5rem',
-                        fontWeight: 600,
-                        color: '#334155',
-                      }}
-                    >
-                      Número de pagos
-                    </label>
+                    <label style={styles.label}>Número de pagos</label>
                     <input
                       type="number"
                       min="1"
@@ -936,27 +826,12 @@ const VentasModule: React.FC = () => {
                           number_of_payments: e.target.value,
                         })
                       }
-                      style={{
-                        width: '100%',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '12px',
-                        padding: '0.85rem 1rem',
-                        backgroundColor: '#ffffff',
-                      }}
+                      style={styles.input}
                     />
                   </div>
 
                   <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: '0.5rem',
-                        fontWeight: 600,
-                        color: '#334155',
-                      }}
-                    >
-                      Frecuencia de pago
-                    </label>
+                    <label style={styles.label}>Frecuencia de pago</label>
                     <select
                       value={formData.payment_frequency}
                       onChange={(e) =>
@@ -965,13 +840,7 @@ const VentasModule: React.FC = () => {
                           payment_frequency: e.target.value,
                         })
                       }
-                      style={{
-                        width: '100%',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '12px',
-                        padding: '0.85rem 1rem',
-                        backgroundColor: '#ffffff',
-                      }}
+                      style={styles.input}
                     >
                       <option value="none">Selecciona una frecuencia</option>
                       <option value="weekly">Semanal</option>
@@ -982,189 +851,202 @@ const VentasModule: React.FC = () => {
                 </div>
 
                 {formErrors.credit && (
-                  <p style={{ marginTop: '1rem', color: '#dc2626', fontSize: '0.9rem' }}>
+                  <p style={{ ...styles.errorText, marginTop: '0.75rem' }}>
                     {formErrors.credit}
                   </p>
                 )}
 
                 <div
                   style={{
-                    marginTop: '1rem',
+                    marginTop: '0.85rem',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    gap: '0.75rem',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '0.65rem',
                   }}
                 >
-                  <div
-                    style={{
-                      backgroundColor: '#fff7ed',
-                      border: '1px solid #fdba74',
-                      borderRadius: '12px',
-                      padding: '0.85rem 1rem',
-                    }}
-                  >
-                    <p style={{ margin: 0, marginBottom: '0.35rem', color: '#9a3412' }}>
+                  <div style={styles.summaryWarmBox}>
+                    <p
+                      style={{
+                        margin: 0,
+                        marginBottom: '0.25rem',
+                        color: '#9a3412',
+                        fontSize: '0.8rem',
+                      }}
+                    >
                       Saldo financiado estimado
                     </p>
-                    <strong style={{ color: '#7c2d12' }}>
+                    <strong
+                      style={{
+                        color: '#7c2d12',
+                        fontSize: '0.92rem',
+                      }}
+                    >
                       {formatCurrency(financedBalance)}
                     </strong>
                   </div>
 
-                  <div
-                    style={{
-                      backgroundColor: '#fefce8',
-                      border: '1px solid #fde68a',
-                      borderRadius: '12px',
-                      padding: '0.85rem 1rem',
-                    }}
-                  >
-                    <p style={{ margin: 0, marginBottom: '0.35rem', color: '#854d0e' }}>
+                  <div style={styles.summaryWarnBox}>
+                    <p
+                      style={{
+                        margin: 0,
+                        marginBottom: '0.25rem',
+                        color: '#854d0e',
+                        fontSize: '0.8rem',
+                      }}
+                    >
                       Monto estimado por pago
                     </p>
-                    <strong style={{ color: '#713f12' }}>
+                    <strong
+                      style={{
+                        color: '#713f12',
+                        fontSize: '0.92rem',
+                      }}
+                    >
                       {formatCurrency(estimatedPaymentAmount)}
                     </strong>
                   </div>
                 </div>
               </SalesSectionCard>
             )}
-            {/* =========================================================
-                FIN — APARTADO CONFIGURACIÓN DE PLAZOS
-            ========================================================= */}
           </div>
-          {/* =========================================================
-              FIN — COLUMNA IZQUIERDA
-          ========================================================= */}
 
           {/* =========================================================
-              INICIO — COLUMNA DERECHA / RESUMEN
+              COLUMNA DERECHA / RESUMEN
           ========================================================= */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={styles.column}>
             <SalesSectionCard
               title="Resumen de venta"
               subtitle="Validación rápida antes de registrar."
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div
-                  style={{
-                    backgroundColor: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '0.9rem 1rem',
-                  }}
-                >
-                  <p style={{ margin: 0, marginBottom: '0.35rem', color: '#64748b' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                <div style={styles.summaryBox}>
+                  <p
+                    style={{
+                      margin: 0,
+                      marginBottom: '0.25rem',
+                      color: '#64748b',
+                      fontSize: '0.8rem',
+                    }}
+                  >
                     Cliente
                   </p>
-                  <strong style={{ color: '#0f172a' }}>{selectedCustomerName}</strong>
+                  <strong
+                    style={{
+                      color: '#0f172a',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    {selectedCustomerName}
+                  </strong>
                 </div>
 
-                <div
-                  style={{
-                    backgroundColor: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '0.9rem 1rem',
-                  }}
-                >
-                  <p style={{ margin: 0, marginBottom: '0.35rem', color: '#64748b' }}>
+                <div style={styles.summaryBox}>
+                  <p
+                    style={{
+                      margin: 0,
+                      marginBottom: '0.25rem',
+                      color: '#64748b',
+                      fontSize: '0.8rem',
+                    }}
+                  >
                     Tipo de venta
                   </p>
-                  <strong style={{ color: '#0f172a' }}>
+                  <strong
+                    style={{
+                      color: '#0f172a',
+                      fontSize: '0.9rem',
+                    }}
+                  >
                     {formData.sale_type === 'installments'
                       ? 'Venta a plazos'
                       : 'Pago inmediato'}
                   </strong>
                 </div>
 
-                <div
-                  style={{
-                    backgroundColor: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: '12px',
-                    padding: '0.9rem 1rem',
-                  }}
-                >
-                  <p style={{ margin: 0, marginBottom: '0.35rem', color: '#1d4ed8' }}>
+                <div style={styles.summaryAccentBox}>
+                  <p
+                    style={{
+                      margin: 0,
+                      marginBottom: '0.25rem',
+                      color: '#1d4ed8',
+                      fontSize: '0.8rem',
+                    }}
+                  >
                     Total estimado
                   </p>
-                  <strong style={{ color: '#1e3a8a', fontSize: '1.1rem' }}>
+                  <strong
+                    style={{
+                      color: '#1e3a8a',
+                      fontSize: '1rem',
+                    }}
+                  >
                     {formatCurrency(saleTotal)}
                   </strong>
                 </div>
 
                 {formData.sale_type === 'installments' && (
                   <>
-                    <div
-                      style={{
-                        backgroundColor: '#fff7ed',
-                        border: '1px solid #fdba74',
-                        borderRadius: '12px',
-                        padding: '0.9rem 1rem',
-                      }}
-                    >
-                      <p style={{ margin: 0, marginBottom: '0.35rem', color: '#9a3412' }}>
+                    <div style={styles.summaryWarmBox}>
+                      <p
+                        style={{
+                          margin: 0,
+                          marginBottom: '0.25rem',
+                          color: '#9a3412',
+                          fontSize: '0.8rem',
+                        }}
+                      >
                         Enganche
                       </p>
-                      <strong style={{ color: '#7c2d12' }}>
+                      <strong
+                        style={{
+                          color: '#7c2d12',
+                          fontSize: '0.9rem',
+                        }}
+                      >
                         {formatCurrency(Number(formData.down_payment))}
                       </strong>
                     </div>
 
-                    <div
-                      style={{
-                        backgroundColor: '#fefce8',
-                        border: '1px solid #fde68a',
-                        borderRadius: '12px',
-                        padding: '0.9rem 1rem',
-                      }}
-                    >
-                      <p style={{ margin: 0, marginBottom: '0.35rem', color: '#854d0e' }}>
+                    <div style={styles.summaryWarnBox}>
+                      <p
+                        style={{
+                          margin: 0,
+                          marginBottom: '0.25rem',
+                          color: '#854d0e',
+                          fontSize: '0.8rem',
+                        }}
+                      >
                         Saldo pendiente
                       </p>
-                      <strong style={{ color: '#713f12' }}>
+                      <strong
+                        style={{
+                          color: '#713f12',
+                          fontSize: '0.9rem',
+                        }}
+                      >
                         {formatCurrency(financedBalance)}
                       </strong>
                     </div>
                   </>
                 )}
-              </div>
 
-            {/* ============================
-            Botón para registro de venta
-            ================================ */}
-            <div style={{ marginTop: '1rem' }}>
-              <button
-                type="button"
-                onClick={handleCreateSale}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: '12px',
-                  backgroundColor: '#2563eb',
-                  color: '#ffffff',
-                  padding: '0.9rem 1rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Registrar venta
-              </button>
-            </div>
-            {/* ==================================
-                FIN Botón para registro de venta
-             ===================================== */}
-          </SalesSectionCard>
+                <div style={{ marginTop: '0.35rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleCreateSale}
+                    style={{
+                      ...styles.primaryButton,
+                      width: '100%',
+                    }}
+                  >
+                    Registrar venta
+                  </button>
+                </div>
+              </div>
+            </SalesSectionCard>
           </div>
-          {/* =========================================================
-              FIN — COLUMNA DERECHA / RESUMEN
-          ========================================================= */}
         </div>
       )}
-      {/* =========================================================
-          FIN — CONTENIDO PRINCIPAL DEL MÓDULO
-      ========================================================= */}
     </div>
   );
 };
