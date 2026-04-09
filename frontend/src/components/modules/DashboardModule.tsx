@@ -121,34 +121,44 @@ const DashboardModule: React.FC = () => {
       ),
   }));
 
+    const vencidos = upcomingPayments.filter(
+    (payment) =>
+      payment.status.toLowerCase() !== 'paid' &&
+      payment.due_date.split('T')[0] < todayDateString
+  );
+
+  const pagosHoy = upcomingPayments.filter(
+    (payment) =>
+      payment.status.toLowerCase() !== 'paid' &&
+      payment.due_date.split('T')[0] === todayDateString
+  );
+
+  const proximosInmediatos = upcomingPayments.filter((payment) => {
+    if (payment.status.toLowerCase() === 'paid') return false;
+
+    const dueDate = new Date(payment.due_date);
+    const diffMs = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    return diffDays > 0 && diffDays <= 3;
+  });
+
   const alertItems = [
-    ...(totalVencido > 0
-      ? [
-          {
-            title: 'Pagos vencidos detectados',
-            description: `Tienes ${formatCurrency(totalVencido)} en pagos vencidos por atender.`,
-            tone: 'danger' as const,
-          },
-        ]
-      : []),
-    ...(upcomingPayments.some(
-      (payment) =>
-        payment.status.toLowerCase() !== 'paid' &&
-        payment.due_date.split('T')[0] === todayDateString
-    )
-      ? [
-          {
-            title: 'Pagos programados para hoy',
-            description: 'Hay clientes con pagos agendados para el día de hoy.',
-            tone: 'warning' as const,
-          },
-        ]
-      : []),
-    {
-      title: 'Seguimiento recomendado',
-      description: 'Revisa los próximos pagos para anticipar la cobranza.',
+    ...vencidos.slice(0, 2).map((payment) => ({
+      title: 'Pago vencido detectado',
+      description: `${getCustomerNameByCreditId(payment.credit_id)} tiene un pago vencido por ${formatCurrency(payment.amount_due)}.`,
+      tone: 'danger' as const,
+    })),
+    ...pagosHoy.slice(0, 2).map((payment) => ({
+      title: 'Pago programado para hoy',
+      description: `${getCustomerNameByCreditId(payment.credit_id)} tiene un pago programado hoy por ${formatCurrency(payment.amount_due)}.`,
+      tone: 'warning' as const,
+    })),
+    ...proximosInmediatos.slice(0, 1).map((payment) => ({
+      title: 'Pago próximo a vencer',
+      description: `${getCustomerNameByCreditId(payment.credit_id)} tiene un pago próximo por ${formatCurrency(payment.amount_due)}.`,
       tone: 'info' as const,
-    },
+    })),
   ];
 
   const messageItems = [
@@ -237,8 +247,15 @@ const DashboardModule: React.FC = () => {
         </DashboardPanel>
 
         <DashboardPanel title="Alertas">
-          <AlertList items={alertItems} />
-        </DashboardPanel>
+  {alertItems.length > 0 ? (
+    <AlertList items={alertItems} />
+  ) : (
+    <p style={{ margin: 0, color: '#8c8c8c' }}>
+      No hay alertas activas por el momento.
+    </p>
+  )}
+</DashboardPanel>
+          
       </div>
 
       <div
