@@ -14,8 +14,10 @@ function AppRouter() {
       <Route
         path="/app"
         element={token ? <LayoutBase /> : <Navigate to="/login" replace />}
-      />
-      <Route path="dashboard" element={<DashboardPage />} />
+      >
+          <Route path="dashboard" element={<DashboardPage />} />
+
+      </Route>
     </Routes>
   );
 }

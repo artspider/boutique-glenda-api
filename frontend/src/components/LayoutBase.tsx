@@ -5,7 +5,7 @@ import VentasModule from './modules/VentasModule';
 import PagosModule from './modules/PagosModule';
 import InventarioModule from './modules/InventarioModule';
 import CreditosModule from './modules/CreditosModule';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { getAccessToken } from '../services/authService';
 
 type ActiveModule =
@@ -71,29 +71,32 @@ const Navbar: React.FC<NavbarProps> = ({ activeModule, onChangeModule }) => (
   </nav>
 );
 
-const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+const LayoutBase: React.FC = () => {
   const [activeModule, setActiveModule] = useState<ActiveModule>('clientes');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-  const checkSession = () => {
-    const token = getAccessToken();
+    const checkSession = () => {
+      const token = getAccessToken();
 
-    if (!token) {
-      navigate('/login', { replace: true });
-    }
-  };
+      if (!token) {
+        navigate('/login', { replace: true });
+      }
+    };
 
-  window.addEventListener('storage', checkSession);
-  window.addEventListener('focus', checkSession);
+    window.addEventListener('storage', checkSession);
+    window.addEventListener('focus', checkSession);
 
-  checkSession();
+    checkSession();
 
-  return () => {
-    window.removeEventListener('storage', checkSession);
-    window.removeEventListener('focus', checkSession);
-  };
-}, [navigate]);
+    return () => {
+      window.removeEventListener('storage', checkSession);
+      window.removeEventListener('focus', checkSession);
+    };
+  }, [navigate]);
+
+  const isDashboardRoute = location.pathname === '/app/dashboard';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -110,13 +113,18 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             minWidth: '0',
           }}
         >
-          {activeModule === 'clientes' && <ClientesModule />}
-          {activeModule === 'productos' && <ProductosModule />}
-          {activeModule === 'ventas' && <VentasModule />}
-          {activeModule === 'pagos' && <PagosModule />}
-          {activeModule === 'inventario' && <InventarioModule />}
-          {activeModule === 'creditos' && <CreditosModule />}
-          {children && <div>{children}</div>}
+          {isDashboardRoute ? (
+            <Outlet />
+          ) : (
+            <>
+              {activeModule === 'clientes' && <ClientesModule />}
+              {activeModule === 'productos' && <ProductosModule />}
+              {activeModule === 'ventas' && <VentasModule />}
+              {activeModule === 'pagos' && <PagosModule />}
+              {activeModule === 'inventario' && <InventarioModule />}
+              {activeModule === 'creditos' && <CreditosModule />}
+            </>
+          )}
         </main>
       </div>
     </div>
