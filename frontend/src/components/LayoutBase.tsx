@@ -16,7 +16,13 @@ import {
   Wallet,
   Boxes,
   BadgeDollarSign,
+  Menu,
+  X,
 } from 'lucide-react';
+
+/* =========================================================
+   TIPOS
+========================================================= */
 
 type ActiveModule =
   | 'dashboard'
@@ -33,6 +39,10 @@ type NavItem = {
   description: string;
   icon: React.ReactNode;
 };
+
+/* =========================================================
+   ITEMS DE NAVEGACIÓN
+========================================================= */
 
 const navItems: NavItem[] = [
   {
@@ -79,6 +89,10 @@ const navItems: NavItem[] = [
   },
 ];
 
+/* =========================================================
+   TEXTOS DE MÓDULOS
+========================================================= */
+
 const moduleTitles: Record<ActiveModule, string> = {
   dashboard: 'Dashboard',
   clientes: 'Clientes',
@@ -99,88 +113,154 @@ const moduleDescriptions: Record<ActiveModule, string> = {
   creditos: 'Revisa saldos, pagos programados y estado de créditos',
 };
 
-const Header: React.FC<{ activeModule: ActiveModule; isMobileView: boolean }> = ({
+/* =========================================================
+   HEADER
+========================================================= */
+
+type HeaderProps = {
+  activeModule: ActiveModule;
+  isMobileView: boolean;
+  isMobileSidebarOpen: boolean;
+  onToggleMobileSidebar: () => void;
+};
+
+const Header: React.FC<HeaderProps> = ({
   activeModule,
   isMobileView,
+  isMobileSidebarOpen,
+  onToggleMobileSidebar,
 }) => (
   <header
     style={{
-      height: '60px',
+      height: isMobileView ? '52px' : '60px',
       backgroundColor: '#ffffff',
       borderBottom: '1px solid #e5e7eb',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: isMobileView ? '0 0.75rem' : '0 1rem',
+      padding: isMobileView ? '0 0.65rem' : '0 1rem',
       position: 'sticky',
       top: 0,
-      zIndex: 10,
+      zIndex: 40,
       gap: '0.75rem',
     }}
   >
-    <div style={{ minWidth: 0 }}>
-      <p
-        style={{
-          margin: 0,
-          fontSize: isMobileView ? '0.68rem' : '0.75rem',
-          fontWeight: 600,
-          color: '#2563eb',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-        }}
-      >
-        Boutique Glenda
-      </p>
-      <h1
-        style={{
-          margin: '0.1rem 0 0 0',
-          fontSize: isMobileView ? '1rem' : '1.15rem',
-          color: '#111827',
-          lineHeight: 1.2,
-        }}
-      >
-        {moduleTitles[activeModule]}
-      </h1>
-    </div>
-
+    {/* =====================================================
+        LADO IZQUIERDO DEL HEADER
+    ===================================================== */}
     <div
       style={{
-        textAlign: 'right',
-        display: isMobileView ? 'none' : 'block',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.65rem',
+        minWidth: 0,
       }}
     >
-      <p
-        style={{
-          margin: 0,
-          fontSize: '0.82rem',
-          color: '#6b7280',
-        }}
-      >
-        Sistema de gestión comercial
-      </p>
-      <p
-        style={{
-          margin: '0.15rem 0 0 0',
-          fontSize: '0.76rem',
-          color: '#9ca3af',
-        }}
-      >
-        MVP operativo
-      </p>
+      {/* ===================================================
+          BOTÓN MENÚ MÓVIL
+      =================================================== */}
+      {isMobileView && (
+        <button
+          type="button"
+          onClick={onToggleMobileSidebar}
+          aria-label={isMobileSidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
+          style={{
+            border: '1px solid #d1d5db',
+            backgroundColor: '#ffffff',
+            color: '#111827',
+            borderRadius: '10px',
+            width: '34px',
+            height: '34px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          {isMobileSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+      )}
+
+      {/* ===================================================
+          MARCA Y TÍTULO
+      =================================================== */}
+      <div style={{ minWidth: 0 }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: isMobileView ? '0.6rem' : '0.75rem',
+            fontWeight: 600,
+            color: '#2563eb',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Boutique Glenda
+        </p>
+
+        <h1
+          style={{
+            margin: '0.05rem 0 0 0',
+            fontSize: isMobileView ? '0.95rem' : '1.15rem',
+            color: '#111827',
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {moduleTitles[activeModule]}
+        </h1>
+      </div>
     </div>
+
+    {/* =====================================================
+        LADO DERECHO DEL HEADER
+    ===================================================== */}
+    {!isMobileView && (
+      <div style={{ textAlign: 'right' }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: '0.82rem',
+            color: '#6b7280',
+          }}
+        >
+          Sistema de gestión comercial
+        </p>
+        <p
+          style={{
+            margin: '0.15rem 0 0 0',
+            fontSize: '0.76rem',
+            color: '#9ca3af',
+          }}
+        >
+          MVP operativo
+        </p>
+      </div>
+    )}
   </header>
 );
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
 
 type SidebarProps = {
   activeModule: ActiveModule;
   onChangeModule: (module: ActiveModule) => void;
   isCompact: boolean;
+  isMobileDrawer?: boolean;
+  onCloseMobileDrawer?: () => void;
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
   activeModule,
   onChangeModule,
   isCompact,
+  isMobileDrawer = false,
+  onCloseMobileDrawer,
 }) => (
   <aside
     style={{
@@ -191,11 +271,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       flexDirection: 'column',
       padding: isCompact ? '0.75rem 0.4rem' : '1rem 0.75rem',
       gap: '1rem',
-      minHeight: 'calc(100vh - 60px)',
-      transition: 'width 0.2s ease, padding 0.2s ease',
+      minHeight: isMobileDrawer ? '100%' : 'calc(100vh - 60px)',
       flexShrink: 0,
+      boxSizing: 'border-box',
     }}
   >
+    {/* =====================================================
+        CABECERA DEL SIDEBAR
+    ===================================================== */}
     {!isCompact && (
       <div
         style={{
@@ -225,6 +308,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
     )}
 
+    {/* =====================================================
+        NAVEGACIÓN
+    ===================================================== */}
     <nav>
       <ul
         style={{
@@ -243,7 +329,12 @@ const Sidebar: React.FC<SidebarProps> = ({
             <li key={item.key}>
               <button
                 type="button"
-                onClick={() => onChangeModule(item.key)}
+                onClick={() => {
+                  onChangeModule(item.key);
+                  if (isMobileDrawer && onCloseMobileDrawer) {
+                    onCloseMobileDrawer();
+                  }
+                }}
                 title={isCompact ? item.label : undefined}
                 style={{
                   width: '100%',
@@ -339,12 +430,23 @@ const Sidebar: React.FC<SidebarProps> = ({
   </aside>
 );
 
+/* =========================================================
+   LAYOUT PRINCIPAL
+========================================================= */
+
 const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  /* =======================================================
+      ESTADOS PRINCIPALES
+  ======================================================= */
   const [activeModule, setActiveModule] = useState<ActiveModule>('dashboard');
   const [isCompactSidebar, setIsCompactSidebar] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
+  /* =======================================================
+      CONTROL DE SESIÓN
+  ======================================================= */
   useEffect(() => {
     const checkSession = () => {
       const token = getAccessToken();
@@ -365,12 +467,20 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     };
   }, [navigate]);
 
+  /* =======================================================
+      MANEJO RESPONSIVE
+  ======================================================= */
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
 
       setIsCompactSidebar(width <= 1100);
       setIsMobileView(width <= 768);
+
+      // Si pasamos a desktop, cerramos el drawer móvil.
+      if (width > 768) {
+        setIsMobileSidebarOpen(false);
+      }
     };
 
     handleResize();
@@ -381,6 +491,32 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     };
   }, []);
 
+  /* =======================================================
+      BLOQUEO DE SCROLL CUANDO DRAWER ESTÁ ABIERTO
+  ======================================================= */
+  useEffect(() => {
+    if (isMobileView && isMobileSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileView, isMobileSidebarOpen]);
+
+  /* =======================================================
+      FUNCIONES DE APOYO
+  ======================================================= */
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen((prev) => !prev);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsMobileSidebarOpen(false);
+  };
+
   return (
     <div
       style={{
@@ -388,7 +524,15 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         backgroundColor: '#f3f4f6',
       }}
     >
-      <Header activeModule={activeModule} isMobileView={isMobileView} />
+      {/* ===================================================
+          HEADER
+      =================================================== */}
+      <Header
+        activeModule={activeModule}
+        isMobileView={isMobileView}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+        onToggleMobileSidebar={toggleMobileSidebar}
+      />
 
       <div
         style={{
@@ -396,12 +540,66 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           minHeight: 'calc(100vh - 60px)',
         }}
       >
-        <Sidebar
-          activeModule={activeModule}
-          onChangeModule={setActiveModule}
-          isCompact={isMobileView ? true : isCompactSidebar}
-        />
+        {/* =================================================
+            SIDEBAR ESCRITORIO / TABLET
+        ================================================= */}
+        {!isMobileView && (
+          <Sidebar
+            activeModule={activeModule}
+            onChangeModule={setActiveModule}
+            isCompact={isCompactSidebar}
+          />
+        )}
 
+        {/* =================================================
+            DRAWER MÓVIL - OVERLAY
+        ================================================= */}
+        {isMobileView && isMobileSidebarOpen && (
+          <div
+            onClick={closeMobileSidebar}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(17, 24, 39, 0.45)',
+              zIndex: 45,
+            }}
+          />
+        )}
+
+        {/* =================================================
+            DRAWER MÓVIL - PANEL
+        ================================================= */}
+        {isMobileView && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '52px',
+              left: 0,
+              bottom: 0,
+              width: '240px',
+              transform: isMobileSidebarOpen
+                ? 'translateX(0)'
+                : 'translateX(-100%)',
+              transition: 'transform 0.25s ease',
+              zIndex: 50,
+              boxShadow: isMobileSidebarOpen
+                ? '4px 0 16px rgba(0,0,0,0.18)'
+                : 'none',
+            }}
+          >
+            <Sidebar
+              activeModule={activeModule}
+              onChangeModule={setActiveModule}
+              isCompact={false}
+              isMobileDrawer
+              onCloseMobileDrawer={closeMobileSidebar}
+            />
+          </div>
+        )}
+
+        {/* =================================================
+            CONTENIDO PRINCIPAL
+        ================================================= */}
         <main
           style={{
             flex: 1,
@@ -409,6 +607,9 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             minWidth: 0,
           }}
         >
+          {/* ===============================================
+              CABECERA DEL MÓDULO ACTIVO
+          =============================================== */}
           <section
             style={{
               backgroundColor: '#ffffff',
@@ -439,6 +640,9 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             </p>
           </section>
 
+          {/* ===============================================
+              CONTENEDOR DEL MÓDULO
+          =============================================== */}
           <section
             style={{
               backgroundColor: '#ffffff',
