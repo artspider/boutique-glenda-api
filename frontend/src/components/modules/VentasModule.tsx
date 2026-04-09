@@ -13,11 +13,18 @@ const VentasModule: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    customer_id: '',
-    product_id: '',
-    quantity: '1',
-    payment_type: 'cash',
-  });
+  customer_id: '',
+  payment_type: 'cash',
+});
+
+  type SaleItemForm = {
+  product_id: number | '';
+  quantity: number;
+};
+
+const [saleItems, setSaleItems] = useState<SaleItemForm[]>([
+  { product_id: '', quantity: 1 },
+]);
 
   const [formErrors, setFormErrors] = useState({
   customer_id: '',
@@ -46,6 +53,10 @@ setError(null);
     }
   };
 
+  const addSaleItemRow = () => {
+  setSaleItems((prev) => [...prev, { product_id: '', quantity: 1 }]);
+};
+
   const validateForm = () => {
   const errors = {
     customer_id: '',
@@ -57,19 +68,27 @@ setError(null);
     errors.customer_id = 'El cliente es obligatorio';
   }
 
-  if (!formData.product_id) {
-    errors.product_id = 'El producto es obligatorio';
-  }
+  if (saleItems.length === 0) {
+  errors.product_id = 'Debes agregar al menos un producto';
+}
 
-  if (!formData.quantity || Number(formData.quantity) <= 0) {
-    errors.quantity = 'La cantidad debe ser mayor a 0';
-  }
+const hasEmptyProduct = saleItems.some((item) => !item.product_id);
+if (hasEmptyProduct) {
+  errors.product_id = 'El producto es obligatorio';
+}
 
-  const selectedProduct = products.find(
-  (p) => p.id === Number(formData.product_id)
-);
+const hasInvalidQuantity = saleItems.some((item) => item.quantity <= 0);
+if (hasInvalidQuantity) {
+  errors.quantity = 'La cantidad debe ser mayor a 0';
+}
 
-if (selectedProduct && Number(formData.quantity) > selectedProduct.stock) {
+const hasInsufficientStock = saleItems.some((item) => {
+  const selectedProduct = getProductById(item.product_id);
+  if (!selectedProduct) return false;
+  return item.quantity > selectedProduct.stock;
+});
+
+if (hasInsufficientStock) {
   errors.quantity = 'No hay suficiente stock disponible';
 }
 
@@ -78,6 +97,44 @@ if (selectedProduct && Number(formData.quantity) > selectedProduct.stock) {
   return !errors.customer_id && !errors.product_id && !errors.quantity;
 };
 
+  const removeSaleItemRow = (index: number) => {
+  setSaleItems((prev) => prev.filter((_, i) => i !== index));
+};
+
+  const updateSaleItem = (
+  index: number,
+  field: keyof SaleItemForm,
+  value: number | ''
+) => {
+  setSaleItems((prev) =>
+    prev.map((item, i) =>
+      i === index
+        ? {
+            ...item,
+            [field]: field === 'quantity' ? Number(value) || 0 : value,
+          }
+        : item
+    )
+  );
+};
+
+  const getProductById = (productId: number | '') => {
+  if (productId === '') return null;
+  return products.find((product) => product.id === productId) ?? null;
+};
+
+  const getItemSubtotal = (item: SaleItemForm) => {
+  const product = getProductById(item.product_id);
+
+  if (!product) return 0;
+
+  return product.sale_price * item.quantity;
+};
+
+  const saleTotal = saleItems.reduce((total, item) => {
+  return total + getItemSubtotal(item);
+}, 0);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -85,26 +142,25 @@ if (selectedProduct && Number(formData.quantity) > selectedProduct.stock) {
   const handleCreateSale = async () => {
       if (!validateForm()) return;
     try {
-      const selectedProduct = products.find(
-        (p) => p.id === Number(formData.product_id)
-      );
+     const items = saleItems.map((item) => {
+  const selectedProduct = getProductById(item.product_id);
 
-      if (!selectedProduct) {
-        alert('Selecciona un producto válido');
-        return;
-      }
+  if (!selectedProduct) {
+    throw new Error('Selecciona un producto válido');
+  }
+
+  return {
+    product_id: selectedProduct.id,
+    quantity: item.quantity,
+    unit_price: selectedProduct.sale_price,
+  };
+});
 
       await createSale({
         customer_id: Number(formData.customer_id),
         user_id: 1,
         payment_type: formData.payment_type,
-        items: [
-          {
-            product_id: selectedProduct.id,
-            quantity: Number(formData.quantity),
-            unit_price: selectedProduct.sale_price,
-          },
-        ],
+        items,
         is_credit: false,
         down_payment: 0,
         number_of_payments: 0,
@@ -112,13 +168,14 @@ if (selectedProduct && Number(formData.quantity) > selectedProduct.stock) {
       });
 
       setFormData({
-        customer_id: '',
-        product_id: '',
-        quantity: '1',
-        payment_type: 'cash',
-      });
+  customer_id: '',
+  payment_type: 'cash',
+});
+
+setSaleItems([{ product_id: '', quantity: 1 }]);
 
       alert('Venta registrada correctamente');
+      await fetchData();
     } catch {
       alert('Error al registrar venta');
     }
@@ -154,64 +211,89 @@ if (selectedProduct && Number(formData.quantity) > selectedProduct.stock) {
           </div>
 
           <div>
-            <label>Producto</label>
-            <select
-              value={formData.product_id}
-              onChange={(e) => {
-                setFormData({ ...formData, product_id: e.target.value });
-                setFormErrors({ ...formErrors, product_id: '' });
-              }}
-            >
+  <label>Productos</label>
 
-              <option value="">Selecciona un producto</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
-              {formData.product_id && (() => {
-  const selectedProduct = products.find(
-    (p) => p.id === Number(formData.product_id)
-  );
+  {saleItems.map((item, index) => {
+    const selectedProduct = getProductById(item.product_id);
 
-  if (!selectedProduct) return null;
+    return (
+      <div key={index} style={{ marginBottom: '1rem', padding: '0.75rem', border: '1px solid #ccc' }}>
+        <select
+          value={item.product_id}
+          onChange={(e) => {
+            updateSaleItem(
+              index,
+              'product_id',
+              e.target.value ? Number(e.target.value) : ''
+            );
+            setFormErrors({ ...formErrors, product_id: '' });
+          }}
+        >
+          <option value="">Selecciona un producto</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name}
+            </option>
+          ))}
+        </select>
 
-  return (
-    <div>
-      <p>Precio: ${selectedProduct.sale_price}</p>
-      <p>Stock disponible: {selectedProduct.stock}</p>
-    </div>
-  );
-})()}
-
-              {formErrors.product_id && <p>{formErrors.product_id}</p>}
+        {selectedProduct && (
+          <div>
+            <p>Precio: ${selectedProduct.sale_price}</p>
+            <p>Stock disponible: {selectedProduct.stock}</p>
           </div>
+        )}
+
+        {saleItems.length > 1 && (
+          <button type="button" onClick={() => removeSaleItemRow(index)}>
+            Quitar producto
+          </button>
+        )}
+      </div>
+    );
+  })}
+
+  <button type="button" onClick={addSaleItemRow}>
+    Agregar producto
+  </button>
+
+  {formErrors.product_id && <p>{formErrors.product_id}</p>}
+</div>
 
           <div>
-            <label>Cantidad</label>
-            <input
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => {
-                setFormData({ ...formData, quantity: e.target.value });
-                setFormErrors({ ...formErrors, quantity: '' });
-              }}
-            />
-              {formErrors.quantity && <p>{formErrors.quantity}</p>}
-          </div>
-          {formData.product_id && Number(formData.quantity) > 0 && (() => {
-  const selectedProduct = products.find(
-    (p) => p.id === Number(formData.product_id)
-  );
+  <label>Cantidades y subtotales</label>
 
-  if (!selectedProduct) return null;
+  {saleItems.map((item, index) => {
+    const selectedProduct = getProductById(item.product_id);
+    const subtotal = getItemSubtotal(item);
 
-  const total = selectedProduct.sale_price * Number(formData.quantity);
+    return (
+      <div key={index} style={{ marginBottom: '1rem' }}>
+        <input
+          type="number"
+          min="1"
+          value={item.quantity}
+          onChange={(e) => {
+            updateSaleItem(index, 'quantity', Number(e.target.value));
+            setFormErrors({ ...formErrors, quantity: '' });
+          }}
+          placeholder="Cantidad"
+        />
 
-  return <p>Total estimado: ${total}</p>;
-})()}
+        <p>Subtotal: ${subtotal}</p>
+
+        {selectedProduct && Number(item.quantity) > selectedProduct.stock && (
+          <p>No hay suficiente stock disponible</p>
+        )}
+      </div>
+    );
+  })}
+
+  {formErrors.quantity && <p>{formErrors.quantity}</p>}
+</div>
+
+
+         <p>Total estimado de la venta: ${saleTotal}</p>
 
           <div>
             <label>Tipo de pago</label>
