@@ -184,12 +184,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => (
   <aside
     style={{
-      width: isCompact ? '88px' : '240px',
+      width: isCompact ? '70px' : '240px',
       backgroundColor: '#111827',
       color: '#ffffff',
       display: 'flex',
       flexDirection: 'column',
-      padding: isCompact ? '1rem 0.5rem' : '1rem 0.75rem',
+      padding: isCompact ? '0.75rem 0.4rem' : '1rem 0.75rem',
       gap: '1rem',
       minHeight: 'calc(100vh - 60px)',
       transition: 'width 0.2s ease, padding 0.2s ease',
@@ -254,7 +254,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   backgroundColor: isActive ? '#1d4ed8' : '#1f2937',
                   color: '#ffffff',
                   borderRadius: '12px',
-                  padding: '0.65rem 0.75rem',
+                  padding: isCompact ? '0.6rem 0.5rem' : '0.65rem 0.75rem',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
@@ -399,7 +399,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         <Sidebar
           activeModule={activeModule}
           onChangeModule={setActiveModule}
-          isCompact={isCompactSidebar}
+          isCompact={isMobileView ? true : isCompactSidebar}
         />
 
         <main
