@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatCurrency } from '../../utils/formatters';
 import {
   getActiveCredits,
   getUpcomingPayments,
@@ -11,13 +12,16 @@ import { getPayments, registerPayment } from '../../services/paymentService';
 import type { Payment } from '../../services/paymentService';
 import { getCustomers } from '../../services/clientService';
 import type { Customer } from '../../services/clientService';
-import SalesSectionCard from './ui/SalesSectionCard';
+import KpiCard from '../dashboard/KpiCard';
+import DashboardPanel from '../dashboard/DashboardPanel';
 import StatusBadge from './ui/StatusBadge';
 
 const PagosModule: React.FC = () => {
   const [credits, setCredits] = useState<Credit[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [upcomingPayments, setUpcomingPayments] = useState<PaymentSchedule[]>([]);
+  const [upcomingPayments, setUpcomingPayments] = useState<PaymentSchedule[]>(
+    []
+  );
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,11 +38,12 @@ const PagosModule: React.FC = () => {
 
   const fetchCredits = async () => {
     try {
-      const [creditsData, upcomingPaymentsData, customersData] = await Promise.all([
-        getActiveCredits(),
-        getUpcomingPayments(),
-        getCustomers(),
-      ]);
+      const [creditsData, upcomingPaymentsData, customersData] =
+        await Promise.all([
+          getActiveCredits(),
+          getUpcomingPayments(),
+          getCustomers(),
+        ]);
 
       setCredits(creditsData);
       setUpcomingPayments(upcomingPaymentsData);
@@ -89,7 +94,9 @@ const PagosModule: React.FC = () => {
     return 'Al corriente';
   };
 
-  const getPaymentStatusVariant = (dueDate: string) => {
+  const getPaymentStatusVariant = (
+    dueDate: string
+  ): 'success' | 'warning' | 'danger' | 'neutral' => {
     const label = getPaymentStatusLabel(dueDate);
 
     if (label === 'Vencido') return 'danger';
@@ -97,13 +104,6 @@ const PagosModule: React.FC = () => {
     if (label === 'Próximo a vencer') return 'warning';
 
     return 'success';
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-    }).format(value);
   };
 
   const formatDate = (value: string) => {
@@ -119,6 +119,41 @@ const PagosModule: React.FC = () => {
       day: '2-digit',
     }).format(date);
   };
+
+  const getCustomerNameByCreditId = (creditId: number): string => {
+    const credit = credits.find((item) => item.id === creditId);
+
+    if (!credit) {
+      return `Crédito #${creditId}`;
+    }
+
+    const customer = customers.find((item) => item.id === credit.customer_id);
+
+    if (!customer) {
+      return `Crédito #${creditId}`;
+    }
+
+    return `${customer.first_name} ${customer.last_name}`.trim();
+  };
+
+  const selectedCredit = credits.find(
+    (credit) => credit.id === Number(formData.credit_id)
+  );
+
+  const selectedCustomer = customers.find(
+    (customer) => customer.id === selectedCredit?.customer_id
+  );
+
+  const nextScheduledPayment = upcomingPayments.find(
+    (payment) => payment.credit_id === Number(formData.credit_id)
+  );
+
+  const totalInstallments = Math.max(
+    0,
+    ...upcomingPayments
+      .filter((payment) => payment.credit_id === Number(formData.credit_id))
+      .map((payment) => payment.installment_number)
+  );
 
   const validateForm = () => {
     const errors = {
@@ -156,37 +191,20 @@ const PagosModule: React.FC = () => {
         amount: Number(formData.amount),
       });
 
+      const paidCreditId = Number(formData.credit_id);
+
       setFormData({
-        credit_id: '',
+        credit_id: String(paidCreditId),
         amount: '',
       });
 
-      setPayments([]);
       alert('Pago registrado correctamente');
       await fetchCredits();
+      await fetchPaymentsByCredit(paidCreditId);
     } catch {
       alert('Error al registrar pago');
     }
   };
-
-  const selectedCredit = credits.find(
-    (credit) => credit.id === Number(formData.credit_id)
-  );
-
-  const selectedCustomer = customers.find(
-    (customer) => customer.id === selectedCredit?.customer_id
-  );
-
-  const nextScheduledPayment = upcomingPayments.find(
-    (payment) => payment.credit_id === Number(formData.credit_id)
-  );
-
-  const totalInstallments = Math.max(
-    0,
-    ...upcomingPayments
-      .filter((payment) => payment.credit_id === Number(formData.credit_id))
-      .map((payment) => payment.installment_number)
-  );
 
   const estimatedBalance = selectedCredit
     ? Math.max(Number(selectedCredit.balance) - Number(formData.amount || 0), 0)
@@ -197,10 +215,14 @@ const PagosModule: React.FC = () => {
       (payment) => getPaymentStatusLabel(payment.due_date) === 'Vencido'
     ).length;
 
-    const dueSoon = upcomingPayments.filter((payment) => {
-      const status = getPaymentStatusLabel(payment.due_date);
-      return status === 'Vence hoy' || status === 'Próximo a vencer';
-    }).length;
+    const dueToday = upcomingPayments.filter(
+      (payment) => getPaymentStatusLabel(payment.due_date) === 'Vence hoy'
+    ).length;
+
+    const dueSoon = upcomingPayments.filter(
+      (payment) =>
+        getPaymentStatusLabel(payment.due_date) === 'Próximo a vencer'
+    ).length;
 
     const current = upcomingPayments.filter(
       (payment) => getPaymentStatusLabel(payment.due_date) === 'Al corriente'
@@ -208,485 +230,556 @@ const PagosModule: React.FC = () => {
 
     return {
       overdue,
+      dueToday,
       dueSoon,
       current,
     };
   }, [upcomingPayments]);
 
+  const upcomingQueue = upcomingPayments.slice(0, 6);
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800">
-              Pagos
-            </h1>
-            <p className="text-sm text-slate-500">
-              Registra abonos, consulta saldos y da seguimiento a vencimientos
-              de forma visual y operativa.
-            </p>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <DashboardPanel title="">
+        <p style={{ marginTop: 0, marginBottom: '0.75rem' }}>
+          {selectedCredit
+            ? `Cliente seleccionado: ${getCustomerNameByCreditId(selectedCredit.id)}`
+            : 'Selecciona un cliente para comenzar.'}
+        </p>
 
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            {selectedCredit ? (
-              <span>
-                Crédito seleccionado: <strong>#{selectedCredit.id}</strong>
-              </span>
-            ) : (
-              <span>Selecciona un crédito para comenzar.</span>
-            )}
-          </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '0.65rem',
+          }}
+        >
+          <KpiCard
+            title="Total vencido"
+            value={String(summary.overdue)}
+            backgroundColor="#fff1f0"
+            borderColor="#ffa39e"
+            valueColor="#cf1322"
+          />
+
+          <KpiCard
+            title="Pagos del día"
+            value={String(summary.dueToday)}
+            backgroundColor="#f6ffed"
+            borderColor="#b7eb8f"
+            valueColor="#389e0d"
+          />
+
+          <KpiCard
+            title="Próximos pagos"
+            value={String(summary.dueSoon)}
+            backgroundColor="#fffbe6"
+            borderColor="#ffe58f"
+          />
+
+          <KpiCard
+            title="Al corriente"
+            value={String(summary.current)}
+            backgroundColor="#e6f4ff"
+            borderColor="#91caff"
+          />
         </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <SalesSectionCard
-          title="Vencidos"
-          subtitle="Pagos que requieren atención inmediata"
-        >
-          <div className="text-3xl font-bold text-rose-600">
-            {summary.overdue}
-          </div>
-        </SalesSectionCard>
-
-        <SalesSectionCard
-          title="Próximos a vencer"
-          subtitle="Seguimiento preventivo de cobranza"
-        >
-          <div className="text-3xl font-bold text-amber-600">
-            {summary.dueSoon}
-          </div>
-        </SalesSectionCard>
-
-        <SalesSectionCard
-          title="Al corriente"
-          subtitle="Créditos con pagos estables"
-        >
-          <div className="text-3xl font-bold text-emerald-600">
-            {summary.current}
-          </div>
-        </SalesSectionCard>
-      </section>
+      </DashboardPanel>
 
       {loading && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
-          Cargando créditos...
-        </div>
+        <DashboardPanel title="">
+          <p style={{ margin: 0, color: '#8c8c8c' }}>Cargando créditos...</p>
+        </DashboardPanel>
       )}
 
       {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 shadow-sm">
-          {error}
-        </div>
+        <DashboardPanel title="">
+          <p style={{ margin: 0, color: '#cf1322' }}>{error}</p>
+        </DashboardPanel>
       )}
 
       {!loading && !error && (
         <>
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            <SalesSectionCard
-              title="Registrar pago"
-              subtitle="Selecciona el crédito y captura el abono"
-            >
-              <div className="space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Crédito
-                  </label>
-                  <select
-                    value={formData.credit_id}
-                    onChange={(e) => {
-                      const selectedCreditId = e.target.value;
-
-                      const upcomingPayment = upcomingPayments.find(
-                        (payment) =>
-                          payment.credit_id === Number(selectedCreditId)
-                      );
-
-                      setFormData({
-                        ...formData,
-                        credit_id: selectedCreditId,
-                        amount: upcomingPayment
-                          ? String(upcomingPayment.amount_due)
-                          : '',
-                      });
-
-                      setFormErrors({
-                        ...formErrors,
-                        credit_id: '',
-                        amount: '',
-                      });
-
-                      if (selectedCreditId) {
-                        fetchPaymentsByCredit(Number(selectedCreditId));
-                      } else {
-                        setPayments([]);
-                      }
-                    }}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                  >
-                    <option value="">Selecciona un crédito</option>
-                    {credits.map((credit) => (
-                      <option key={credit.id} value={credit.id}>
-                        Crédito #{credit.id} - Cliente {credit.customer_id} -
-                        Saldo: {formatCurrency(Number(credit.balance))}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.credit_id && (
-                    <p className="mt-2 text-xs text-rose-600">
-                      {formErrors.credit_id}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Monto del pago
-                  </label>
-                  <div className="flex flex-col gap-3 md:flex-row">
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={formData.amount}
-                      onChange={(e) => {
-                        setFormData({ ...formData, amount: e.target.value });
-                        setFormErrors({ ...formErrors, amount: '' });
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                      placeholder="Ingresa el monto"
-                    />
-
-                    {nextScheduledPayment && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            amount: String(nextScheduledPayment.amount_due),
-                          })
-                        }
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        Usar monto pactado
-                      </button>
-                    )}
-                  </div>
-
-                  {nextScheduledPayment && formData.amount && (
-                    <p className="mt-2 text-xs text-slate-500">
-                      {Number(formData.amount) < Number(nextScheduledPayment.amount_due)
-                        ? 'Pago menor al pactado'
-                        : Number(formData.amount) > Number(nextScheduledPayment.amount_due)
-                          ? 'Pago mayor al pactado'
-                          : 'Pago exacto'}
-                    </p>
-                  )}
-
-                  {formErrors.amount && (
-                    <p className="mt-2 text-xs text-rose-600">
-                      {formErrors.amount}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleRegisterPayment}
-                    className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  >
-                    Registrar pago
-                  </button>
-                </div>
-              </div>
-            </SalesSectionCard>
-
-            <SalesSectionCard
-              title="Resumen del crédito"
-              subtitle="Información operativa del cliente y del próximo pago"
-            >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '0.75rem',
+              alignItems: 'stretch',
+            }}
+          >
+            <DashboardPanel title="Resumen del crédito">
               {!selectedCredit ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                  Selecciona un crédito para visualizar su resumen.
-                </div>
+                <p style={{ margin: 0, color: '#8c8c8c' }}>
+                  Selecciona un cliente para visualizar su resumen.
+                </p>
               ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+                      gap: '0.55rem',
+                    }}
+                  >
+                    <div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                         Cliente
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                      <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                         {selectedCustomer
                           ? `${selectedCustomer.first_name} ${selectedCustomer.last_name}`.trim()
                           : `Cliente ${selectedCredit.customer_id}`}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                    <div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                         Estado
                       </p>
-                      <p className="mt-1 text-sm font-semibold capitalize text-slate-800">
+                      <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                         {selectedCredit.status}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                    <div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                         Total del crédito
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                      <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                         {formatCurrency(Number(selectedCredit.total_amount))}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                    <div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                         Enganche
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                      <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                         {formatCurrency(Number(selectedCredit.down_payment))}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                    <div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                         Monto financiado
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                      <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                         {formatCurrency(Number(selectedCredit.financed_amount))}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                    <div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                         Saldo pendiente
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-rose-600">
+                      <p style={{ margin: '0.15rem 0 0 0', fontWeight: 700, color: '#cf1322' }}>
                         {formatCurrency(Number(selectedCredit.balance))}
                       </p>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                  <div
+                    style={{
+                      padding: '0.7rem 0.8rem',
+                      borderRadius: '10px',
+                      border: '1px solid #d9d9d9',
+                      background: '#fafafa',
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                       Saldo estimado después del pago
                     </p>
-                    <p className="mt-1 text-lg font-bold text-emerald-600">
+                    <p
+                      style={{
+                        margin: '0.2rem 0 0 0',
+                        fontSize: '1.05rem',
+                        fontWeight: 700,
+                        color: '#389e0d',
+                      }}
+                    >
                       {formatCurrency(estimatedBalance)}
                     </p>
                   </div>
 
                   {nextScheduledPayment ? (
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.55rem',
+                        padding: '0.7rem 0.8rem',
+                        borderRadius: '10px',
+                        border: '1px solid #f0f0f0',
+                        background: '#fafafa',
+                      }}
+                    >
+                      <div>
                         <StatusBadge
                           label={getPaymentStatusLabel(nextScheduledPayment.due_date)}
-                          variant={getPaymentStatusVariant(nextScheduledPayment.due_date) as 'success' | 'warning' | 'danger'}
+                          variant={getPaymentStatusVariant(nextScheduledPayment.due_date)}
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+                          gap: '0.55rem',
+                        }}
+                      >
                         <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                             Próximo abono pactado
                           </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-800">
+                          <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                             {formatCurrency(Number(nextScheduledPayment.amount_due))}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                             Fecha próxima de pago
                           </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-800">
+                          <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                             {formatDate(nextScheduledPayment.due_date)}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: '#8c8c8c' }}>
                             Parcialidad
                           </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-800">
+                          <p style={{ margin: '0.15rem 0 0 0', fontWeight: 600 }}>
                             {nextScheduledPayment.installment_number} de {totalInstallments}
                           </p>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
+                    <p style={{ margin: 0, color: '#8c8c8c' }}>
                       No hay un próximo pago programado para este crédito.
-                    </div>
+                    </p>
                   )}
-                </div>
-              )}
-            </SalesSectionCard>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
-            <SalesSectionCard
-              title="Historial de pagos"
-              subtitle="Pagos registrados del crédito seleccionado"
-            >
-              {!selectedCredit ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                  Selecciona un crédito para consultar sus pagos.
-                </div>
-              ) : payments.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                  No hay pagos registrados para este crédito.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                        <th className="px-4 py-3">ID</th>
-                        <th className="px-4 py-3">Monto</th>
-                        <th className="px-4 py-3">Método</th>
-                        <th className="px-4 py-3">Referencia</th>
-                        <th className="px-4 py-3">Fecha</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {payments.map((payment) => (
-                        <tr
-                          key={payment.id}
-                          className="border-b border-slate-100 text-slate-700"
-                        >
-                          <td className="px-4 py-3 font-medium">{payment.id}</td>
-                          <td className="px-4 py-3">
-                            {formatCurrency(Number(payment.amount))}
-                          </td>
-                          <td className="px-4 py-3">{payment.payment_method}</td>
-                          <td className="px-4 py-3">{payment.reference ?? '-'}</td>
-                          <td className="px-4 py-3">{formatDate(payment.paid_at)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </SalesSectionCard>
-
-            <SalesSectionCard
-              title="Calendario / alertas operativas"
-              subtitle="Base visual para vencimientos y seguimiento"
-            >
-              {upcomingPayments.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                  No hay pagos programados para mostrar.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {upcomingPayments.slice(0, 6).map((payment) => {
-  const relatedCredit = credits.find(
-    (credit) => credit.id === payment.credit_id
-  );
-
-  const customer = customers.find(
-    (item) => item.id === relatedCredit?.customer_id
-  );
-
-  return (
-    <div
-      key={`${payment.credit_id}-${payment.installment_number}`}
-      className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between"
-    >
-      <div>
-        <p className="text-sm font-semibold text-slate-800">
-          {customer
-            ? `${customer.first_name} ${customer.last_name}`.trim()
-            : relatedCredit
-              ? `Cliente ${relatedCredit.customer_id}`
-              : `Crédito #${payment.credit_id}`}
-        </p>
-        <p className="text-xs text-slate-500">
-          Crédito #{payment.credit_id} · Parcialidad{' '}
-          {payment.installment_number}
-        </p>
-      </div>
-
-                        <div className="flex flex-col gap-2 text-sm md:items-end">
-                          <p className="font-semibold text-slate-800">
-                            {formatCurrency(Number(payment.amount_due))}
-                          </p>
-                          <p className="text-slate-500">
-                            {formatDate(payment.due_date)}
-                          </p>
-                          <div>
-                            <StatusBadge
-                              label={getPaymentStatusLabel(payment.due_date)}
-                              variant={getPaymentStatusVariant(payment.due_date) as 'success' | 'warning' | 'danger'}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </SalesSectionCard>
-          </div>
-
-          <SalesSectionCard
-            title="Créditos activos"
-            subtitle="Vista general para selección y control"
-          >
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <th className="px-4 py-3">ID</th>
-                    <th className="px-4 py-3">Cliente</th>
-                    <th className="px-4 py-3">Total</th>
-                    <th className="px-4 py-3">Financiado</th>
-                    <th className="px-4 py-3">Saldo</th>
-                    <th className="px-4 py-3">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {credits.map((credit) => (
-                    <tr
-                      key={credit.id}
-                      className="border-b border-slate-100 text-slate-700"
+                  <div
+                    style={{
+                      marginTop: '0.15rem',
+                      padding: '0.65rem 0.75rem',
+                      borderRadius: '10px',
+                      border: '1px solid #e6f4ff',
+                      background: '#f7fbff',
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: '0 0 0.45rem 0',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        color: '#3b5b7a',
+                      }}
                     >
-                      <td className="px-4 py-3 font-medium">#{credit.id}</td>
-                      <td className="px-4 py-3">
-                        {(() => {
-                          const customer = customers.find(
-                            (item) => item.id === credit.customer_id
+                      Referencia rápida de próximos vencimientos
+                    </p>
+
+                    {upcomingQueue.length === 0 ? (
+                      <p style={{ margin: 0, color: '#8c8c8c' }}>
+                        No hay pagos programados para mostrar.
+                      </p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                        {upcomingQueue.map((payment) => {
+                          const relatedCredit = credits.find(
+                            (credit) => credit.id === payment.credit_id
                           );
 
-                          return customer
-                            ? `${customer.first_name} ${customer.last_name}`.trim()
-                            : `Cliente ${credit.customer_id}`;
-                        })()}
-                      </td>
-                      <td className="px-4 py-3">
-                        {formatCurrency(Number(credit.total_amount))}
-                      </td>
-                      <td className="px-4 py-3">
-                        {formatCurrency(Number(credit.financed_amount))}
-                      </td>
-                      <td className="px-4 py-3">
-                        {formatCurrency(Number(credit.balance))}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge
-                          label={credit.status}
-                          variant="neutral"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          const customer = customers.find(
+                            (item) => item.id === relatedCredit?.customer_id
+                          );
+
+                          return (
+                            <div
+                              key={`${payment.credit_id}-${payment.installment_number}`}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: '0.7rem',
+                                padding: '0.55rem 0.65rem',
+                                border: '1px solid #d6e4ff',
+                                borderRadius: '8px',
+                                background: '#ffffff',
+                              }}
+                            >
+                              <div>
+                                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.88rem' }}>
+                                  {customer
+                                    ? `${customer.first_name} ${customer.last_name}`.trim()
+                                    : relatedCredit
+                                      ? `Cliente ${relatedCredit.customer_id}`
+                                      : `Crédito #${payment.credit_id}`}
+                                </p>
+                                <p
+                                  style={{
+                                    margin: '0.18rem 0 0 0',
+                                    color: '#8c8c8c',
+                                    fontSize: '0.8rem',
+                                  }}
+                                >
+                                  {formatDate(payment.due_date)}
+                                </p>
+                              </div>
+
+                              <div style={{ textAlign: 'right' }}>
+                                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.88rem' }}>
+                                  {formatCurrency(Number(payment.amount_due))}
+                                </p>
+                                <div style={{ marginTop: '0.15rem' }}>
+                                  <StatusBadge
+                                    label={getPaymentStatusLabel(payment.due_date)}
+                                    variant={getPaymentStatusVariant(payment.due_date)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </DashboardPanel>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <DashboardPanel title="Registrar pago">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                  <p style={{ margin: 0, color: '#595959', fontSize: '0.92rem' }}>
+                    Busca y selecciona a la persona para registrar su abono
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <label style={{ fontWeight: 600, fontSize: '0.92rem' }}>Cliente</label>
+                    <select
+                      value={formData.credit_id}
+                      onChange={(e) => {
+                        const selectedCreditId = e.target.value;
+
+                        const upcomingPayment = upcomingPayments.find(
+                          (payment) =>
+                            payment.credit_id === Number(selectedCreditId)
+                        );
+
+                        setFormData({
+                          ...formData,
+                          credit_id: selectedCreditId,
+                          amount: upcomingPayment
+                            ? String(upcomingPayment.amount_due)
+                            : '',
+                        });
+
+                        setFormErrors({
+                          ...formErrors,
+                          credit_id: '',
+                          amount: '',
+                        });
+
+                        if (selectedCreditId) {
+                          fetchPaymentsByCredit(Number(selectedCreditId));
+                        } else {
+                          setPayments([]);
+                        }
+                      }}
+                      style={{
+                        padding: '0.55rem 0.75rem',
+                        borderRadius: '8px',
+                        border: '1px solid #d9d9d9',
+                        fontSize: '0.92rem',
+                        width: '100%',
+                      }}
+                    >
+                      <option value="">Selecciona un cliente</option>
+                      {credits.map((credit) => (
+                        <option key={credit.id} value={credit.id}>
+                          {getCustomerNameByCreditId(credit.id)}
+                        </option>
+                      ))}
+                    </select>
+                    {formErrors.credit_id && (
+                      <p style={{ margin: 0, color: '#cf1322', fontSize: '0.82rem' }}>
+                        {formErrors.credit_id}
+                      </p>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <label style={{ fontWeight: 600, fontSize: '0.92rem' }}>Monto del pago</label>
+
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: nextScheduledPayment ? '1fr auto' : '1fr',
+                        gap: '0.5rem',
+                      }}
+                    >
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(e) => {
+                          setFormData({ ...formData, amount: e.target.value });
+                          setFormErrors({ ...formErrors, amount: '' });
+                        }}
+                        placeholder="Ingresa el monto"
+                        style={{
+                          padding: '0.55rem 0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid #d9d9d9',
+                          fontSize: '0.92rem',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+
+                      {nextScheduledPayment && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              amount: String(nextScheduledPayment.amount_due),
+                            })
+                          }
+                          style={{
+                            padding: '0.55rem 0.8rem',
+                            borderRadius: '8px',
+                            border: '1px solid #d9d9d9',
+                            background: '#fafafa',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            fontSize: '0.88rem',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Monto pactado
+                        </button>
+                      )}
+                    </div>
+
+                    {nextScheduledPayment && formData.amount && (
+                      <p style={{ margin: 0, color: '#8c8c8c', fontSize: '0.82rem' }}>
+                        {Number(formData.amount) <
+                        Number(nextScheduledPayment.amount_due)
+                          ? 'Pago menor al pactado'
+                          : Number(formData.amount) >
+                              Number(nextScheduledPayment.amount_due)
+                            ? 'Pago mayor al pactado'
+                            : 'Pago exacto'}
+                      </p>
+                    )}
+
+                    {formErrors.amount && (
+                      <p style={{ margin: 0, color: '#cf1322', fontSize: '0.82rem' }}>
+                        {formErrors.amount}
+                      </p>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleRegisterPayment}
+                      style={{
+                        padding: '0.65rem 0.95rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: '#1677ff',
+                        color: '#fff',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontSize: '0.92rem',
+                        width: '100%',
+                      }}
+                    >
+                      Registrar pago
+                    </button>
+                  </div>
+                </div>
+              </DashboardPanel>
+
+              <DashboardPanel title="Historial de pagos">
+                {!selectedCredit ? (
+                  <p style={{ margin: 0, color: '#8c8c8c' }}>
+                    Selecciona un cliente para consultar sus pagos.
+                  </p>
+                ) : payments.length === 0 ? (
+                  <p style={{ margin: 0, color: '#8c8c8c' }}>
+                    No hay pagos registrados para este crédito.
+                  </p>
+                ) : (
+                  <div
+                    style={{
+                      overflowX: 'auto',
+                      overflowY: 'auto',
+                      maxHeight: '280px',
+                      border: '1px solid #f0f0f0',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    <table
+                      style={{
+                        width: '100%',
+                        minWidth: '560px',
+                        borderCollapse: 'collapse',
+                        fontSize: '0.92rem',
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            textAlign: 'left',
+                            borderBottom: '1px solid #f0f0f0',
+                            background: '#fafafa',
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 1,
+                          }}
+                        >
+                          <th style={{ padding: '0.6rem 0.5rem' }}>ID</th>
+                          <th style={{ padding: '0.6rem 0.5rem' }}>Monto</th>
+                          <th style={{ padding: '0.6rem 0.5rem' }}>Método</th>
+                          <th style={{ padding: '0.6rem 0.5rem' }}>Referencia</th>
+                          <th style={{ padding: '0.6rem 0.5rem' }}>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((payment) => (
+                          <tr
+                            key={payment.id}
+                            style={{ borderBottom: '1px solid #f5f5f5' }}
+                          >
+                            <td style={{ padding: '0.6rem 0.5rem' }}>{payment.id}</td>
+                            <td style={{ padding: '0.6rem 0.5rem' }}>
+                              {formatCurrency(Number(payment.amount))}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem' }}>
+                              {payment.payment_method}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem' }}>
+                              {payment.reference ?? '-'}
+                            </td>
+                            <td style={{ padding: '0.6rem 0.5rem' }}>
+                              {formatDate(payment.paid_at)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </DashboardPanel>
             </div>
-          </SalesSectionCard>
+          </div>
         </>
       )}
     </div>
