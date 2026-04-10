@@ -41,8 +41,10 @@ type NavItem = {
 };
 
 /* =========================================================
-   ITEMS DE NAVEGACIÓN
+   CONSTANTES
 ========================================================= */
+
+const ACTIVE_MODULE_STORAGE_KEY = 'boutique_glenda_active_module';
 
 const navItems: NavItem[] = [
   {
@@ -89,10 +91,6 @@ const navItems: NavItem[] = [
   },
 ];
 
-/* =========================================================
-   TEXTOS DE MÓDULOS
-========================================================= */
-
 const moduleTitles: Record<ActiveModule, string> = {
   dashboard: 'Dashboard',
   clientes: 'Clientes',
@@ -111,6 +109,38 @@ const moduleDescriptions: Record<ActiveModule, string> = {
   pagos: 'Controla pagos realizados y seguimiento de cobranza',
   inventario: 'Supervisa existencias y movimientos de inventario',
   creditos: 'Revisa saldos, pagos programados y estado de créditos',
+};
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+/**
+ * Valida si una cadena corresponde a un módulo permitido.
+ */
+const isValidActiveModule = (value: string): value is ActiveModule => {
+  return [
+    'dashboard',
+    'clientes',
+    'productos',
+    'ventas',
+    'pagos',
+    'inventario',
+    'creditos',
+  ].includes(value);
+};
+
+/**
+ * Recupera desde localStorage el último módulo activo válido.
+ */
+const getStoredActiveModule = (): ActiveModule => {
+  const storedValue = localStorage.getItem(ACTIVE_MODULE_STORAGE_KEY);
+
+  if (storedValue && isValidActiveModule(storedValue)) {
+    return storedValue;
+  }
+
+  return 'dashboard';
 };
 
 /* =========================================================
@@ -438,7 +468,9 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   /* =======================================================
       ESTADOS PRINCIPALES
   ======================================================= */
-  const [activeModule, setActiveModule] = useState<ActiveModule>('dashboard');
+  const [activeModule, setActiveModule] = useState<ActiveModule>(() =>
+    getStoredActiveModule()
+  );
   const [isCompactSidebar, setIsCompactSidebar] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -468,6 +500,13 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   }, [navigate]);
 
   /* =======================================================
+      PERSISTENCIA DEL MÓDULO ACTIVO
+  ======================================================= */
+  useEffect(() => {
+    localStorage.setItem(ACTIVE_MODULE_STORAGE_KEY, activeModule);
+  }, [activeModule]);
+
+  /* =======================================================
       MANEJO RESPONSIVE
   ======================================================= */
   useEffect(() => {
@@ -477,7 +516,6 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       setIsCompactSidebar(width <= 1100);
       setIsMobileView(width <= 768);
 
-      // Si pasamos a desktop, cerramos el drawer móvil.
       if (width > 768) {
         setIsMobileSidebarOpen(false);
       }
