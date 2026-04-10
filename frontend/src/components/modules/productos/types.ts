@@ -1,7 +1,7 @@
 import type { Product } from '../../../services/productService';
 
 /**
- * Estado local del formulario de productos
+ * Estado local del formulario de productos.
  */
 export type ProductFormData = {
   name: string;
@@ -15,7 +15,15 @@ export type ProductFormData = {
 };
 
 /**
- * Catálogo local de categorías
+ * Estado local del formulario rápido de categorías.
+ */
+export type CategoryQuickFormData = {
+  name: string;
+  description: string;
+};
+
+/**
+ * Catálogo local de categorías para el select.
  */
 export type ProductCategoryOption = {
   value: string;
@@ -23,12 +31,17 @@ export type ProductCategoryOption = {
 };
 
 /**
- * Errores por campo
+ * Errores por campo del formulario de productos.
  */
 export type FormErrors = Partial<Record<keyof ProductFormData, string>>;
 
 /**
- * Props para el resumen superior
+ * Errores por campo del alta rápida de categoría.
+ */
+export type CategoryQuickFormErrors = Partial<Record<keyof CategoryQuickFormData, string>>;
+
+/**
+ * Props para el resumen superior.
  */
 export type ProductosResumenProps = {
   totalActivos: number;
@@ -37,7 +50,10 @@ export type ProductosResumenProps = {
 };
 
 /**
- * Props del formulario
+ * Props del formulario principal de productos.
+ *
+ * Incluye también el bloque de alta rápida de categoría para no sacar
+ * al usuario del flujo de captura del producto.
  */
 export type ProductoFormProps = {
   formData: ProductFormData;
@@ -45,15 +61,28 @@ export type ProductoFormProps = {
   editingProductId: number | null;
   submitting: boolean;
   categoryOptions: ProductCategoryOption[];
+
+  showQuickCategoryForm: boolean;
+  categorySubmitting: boolean;
+  categoryQuickFormData: CategoryQuickFormData;
+  categoryQuickFormErrors: CategoryQuickFormErrors;
+
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => void;
   onCancel: () => void;
   onSave: () => void;
+
+  onToggleQuickCategoryForm: () => void;
+  onQuickCategoryInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  onQuickCategoryCancel: () => void;
+  onQuickCategorySave: () => void;
 };
 
 /**
- * Props de la tabla
+ * Props de la tabla.
  */
 export type ProductosTableProps = {
   productos: Product[];
@@ -62,7 +91,7 @@ export type ProductosTableProps = {
 };
 
 /**
- * Formulario inicial
+ * Formulario inicial de producto.
  */
 export const initialFormData: ProductFormData = {
   name: '',
@@ -73,4 +102,12 @@ export const initialFormData: ProductFormData = {
   stock: '',
   minimum_stock: '',
   category_id: '',
+};
+
+/**
+ * Formulario inicial de alta rápida de categoría.
+ */
+export const initialCategoryQuickFormData: CategoryQuickFormData = {
+  name: '',
+  description: '',
 };

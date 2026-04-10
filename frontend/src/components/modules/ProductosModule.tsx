@@ -7,6 +7,12 @@ import {
 } from '../../services/productService';
 import type { Product } from '../../services/productService';
 
+import {
+  getProductCategories,
+  createProductCategory,
+  type ProductCategory,
+} from '../../services/productCategoryService';
+
 import ProductoForm from './productos/ProductoForm';
 import ProductosResumen from './productos/ProductosResumen';
 import ProductosTable from './productos/ProductosTable';
@@ -18,25 +24,20 @@ import {
   secondaryButtonStyle,
 } from './productos/styles';
 
-import { initialFormData } from './productos/types';
+import {
+  initialFormData,
+  initialCategoryQuickFormData,
+} from './productos/types';
+
 import type {
+  CategoryQuickFormData,
+  CategoryQuickFormErrors,
   FormErrors,
   ProductCategoryOption,
   ProductFormData,
 } from './productos/types';
 
 import { toNumber } from './productos/utils';
-
-/**
- * Catálogo local temporal de categorías
- * Ajustar a ids reales del backend
- */
-const categoryOptions: ProductCategoryOption[] = [
-  { value: '1', label: 'Ropa' },
-  { value: '2', label: 'Calzado' },
-  { value: '3', label: 'Accesorios' },
-  { value: '4', label: 'Belleza' },
-];
 
 /**
  * =========================================================
@@ -47,8 +48,11 @@ const categoryOptions: ProductCategoryOption[] = [
  */
 const ProductosModule: React.FC = () => {
   const [productos, setProductos] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
@@ -57,11 +61,29 @@ const ProductosModule: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const [showQuickCategoryForm, setShowQuickCategoryForm] = useState(false);
+  const [categorySubmitting, setCategorySubmitting] = useState(false);
+  const [categoryQuickFormData, setCategoryQuickFormData] =
+    useState<CategoryQuickFormData>(initialCategoryQuickFormData);
+  const [categoryQuickFormErrors, setCategoryQuickFormErrors] =
+    useState<CategoryQuickFormErrors>({});
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
 
   /**
-   * Carga productos
+   * Opciones para el select de categorías.
+   */
+  const categoryOptions: ProductCategoryOption[] = useMemo(() => {
+    return categories.map((category) => ({
+      value: String(category.id),
+      label: category.name,
+    }));
+  }, [categories]);
+
+  /**
+   * Carga productos.
    */
   const fetchProductos = async () => {
     try {
@@ -76,12 +98,31 @@ const ProductosModule: React.FC = () => {
     }
   };
 
+  /**
+   * Carga categorías reales desde backend.
+   */
+  const fetchCategories = async (): Promise<ProductCategory[]> => {
+    try {
+      setCategoriesLoading(true);
+      const data = await getProductCategories();
+      setCategories(data);
+      setCategoriesError(null);
+      return data;
+    } catch {
+      setCategoriesError('No se pudieron cargar las categorías.');
+      return [];
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchProductos();
+    fetchCategories();
   }, []);
 
   /**
-   * Reinicia formulario
+   * Reinicia formulario principal.
    */
   const resetForm = () => {
     setFormData(initialFormData);
@@ -89,10 +130,22 @@ const ProductosModule: React.FC = () => {
     setEditingProductId(null);
     setShowForm(false);
     setSaveErrorMessage(null);
+    setShowQuickCategoryForm(false);
+    setCategoryQuickFormData(initialCategoryQuickFormData);
+    setCategoryQuickFormErrors({});
   };
 
   /**
-   * Cambio de campos
+   * Reinicia formulario rápido de categoría.
+   */
+  const resetQuickCategoryForm = () => {
+    setCategoryQuickFormData(initialCategoryQuickFormData);
+    setCategoryQuickFormErrors({});
+    setShowQuickCategoryForm(false);
+  };
+
+  /**
+   * Cambio de campos del producto.
    */
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -113,7 +166,28 @@ const ProductosModule: React.FC = () => {
   };
 
   /**
-   * Validación local
+   * Cambio de campos del alta rápida de categoría.
+   */
+  const handleQuickCategoryInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+
+    setCategoryQuickFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setCategoryQuickFormErrors((prev) => ({
+      ...prev,
+      [name]: '',
+    }));
+
+    setSaveErrorMessage(null);
+  };
+
+  /**
+   * Validación local del formulario principal.
    */
   const validateForm = (): FormErrors => {
     const errors: FormErrors = {};
@@ -156,12 +230,25 @@ const ProductosModule: React.FC = () => {
   };
 
   /**
-   * Extrae un mensaje legible desde distintos formatos de error
+   * Validación local del alta rápida de categoría.
    */
-  const getReadableErrorMessage = (error: any): string => {
-    const detail = error?.response?.data?.detail;
-    const message = error?.response?.data?.message;
-    const fallback = error?.message;
+  const validateQuickCategoryForm = (): CategoryQuickFormErrors => {
+    const errors: CategoryQuickFormErrors = {};
+
+    if (!categoryQuickFormData.name.trim()) {
+      errors.name = 'Requerido';
+    }
+
+    return errors;
+  };
+
+  /**
+   * Extrae un mensaje legible desde distintos formatos de error.
+   */
+  const getReadableErrorMessage = (errorValue: any): string => {
+    const detail = errorValue?.response?.data?.detail;
+    const message = errorValue?.response?.data?.message;
+    const fallback = errorValue?.message;
 
     if (typeof detail === 'string' && detail.trim() !== '') {
       return detail;
@@ -218,14 +305,14 @@ const ProductosModule: React.FC = () => {
         return 'Ocurrió un problema de red. Revisa tu conexión e intenta de nuevo.';
       }
 
-      return 'Ocurrió un error al guardar el producto. Intenta nuevamente.';
+      return 'Ocurrió un error al guardar. Intenta nuevamente.';
     }
 
-    return 'No se pudo guardar el producto. Verifica los datos e intenta de nuevo.';
+    return 'No se pudo completar la operación. Verifica los datos e intenta de nuevo.';
   };
 
   /**
-   * Guarda alta o edición
+   * Guarda alta o edición de producto.
    */
   const handleSave = async () => {
     const errors = validateForm();
@@ -270,16 +357,59 @@ const ProductosModule: React.FC = () => {
 
       setSaveErrorMessage(null);
       resetForm();
-    } catch (error: any) {
-      console.error('Error al guardar producto:', error);
-      setSaveErrorMessage(getReadableErrorMessage(error));
+    } catch (errorValue: any) {
+      console.error('Error al guardar producto:', errorValue);
+      setSaveErrorMessage(getReadableErrorMessage(errorValue));
     } finally {
       setSubmitting(false);
     }
   };
 
   /**
-   * Prepara edición
+   * Guarda una nueva categoría desde el alta rápida.
+   * Después de crearla:
+   * - recarga categorías
+   * - selecciona la nueva automáticamente en el producto
+   */
+  const handleQuickCategorySave = async () => {
+    const errors = validateQuickCategoryForm();
+    setCategoryQuickFormErrors(errors);
+    setSuccessMessage(null);
+    setSaveErrorMessage(null);
+
+    if (Object.keys(errors).length > 0) {
+      setSaveErrorMessage('Completa el nombre de la categoría antes de guardar.');
+      return;
+    }
+
+    try {
+      setCategorySubmitting(true);
+
+      const createdCategory = await createProductCategory({
+        name: categoryQuickFormData.name.trim(),
+        description: categoryQuickFormData.description.trim() || null,
+      });
+
+      await fetchCategories();
+
+      setFormData((prev) => ({
+        ...prev,
+        category_id: String(createdCategory.id),
+      }));
+
+      setSuccessMessage('Categoría creada correctamente.');
+      setSaveErrorMessage(null);
+      resetQuickCategoryForm();
+    } catch (errorValue: any) {
+      console.error('Error al crear categoría:', errorValue);
+      setSaveErrorMessage(getReadableErrorMessage(errorValue));
+    } finally {
+      setCategorySubmitting(false);
+    }
+  };
+
+  /**
+   * Prepara edición de producto.
    */
   const handleEditClick = (product: Product) => {
     setEditingProductId(product.id);
@@ -287,6 +417,9 @@ const ProductosModule: React.FC = () => {
     setFormErrors({});
     setSaveErrorMessage(null);
     setSuccessMessage(null);
+    setShowQuickCategoryForm(false);
+    setCategoryQuickFormData(initialCategoryQuickFormData);
+    setCategoryQuickFormErrors({});
 
     setFormData({
       name: product.name,
@@ -303,7 +436,7 @@ const ProductosModule: React.FC = () => {
   };
 
   /**
-   * Desactiva producto
+   * Desactiva producto.
    */
   const handleDeleteClick = async (productId: number) => {
     const confirmed = window.confirm('¿Deseas desactivar este producto?');
@@ -318,14 +451,14 @@ const ProductosModule: React.FC = () => {
   };
 
   /**
-   * Productos visibles
+   * Productos visibles.
    */
   const productosVisibles = useMemo(() => {
     return productos.filter((p) => p.is_active === !showInactive);
   }, [productos, showInactive]);
 
   /**
-   * Resumen superior
+   * Resumen superior.
    */
   const totalActivos = productos.filter((p) => p.is_active).length;
   const totalInactivos = productos.filter((p) => !p.is_active).length;
@@ -394,6 +527,9 @@ const ProductosModule: React.FC = () => {
                 setFormData(initialFormData);
                 setFormErrors({});
                 setSaveErrorMessage(null);
+                setShowQuickCategoryForm(false);
+                setCategoryQuickFormData(initialCategoryQuickFormData);
+                setCategoryQuickFormErrors({});
               }
             }}
           >
@@ -408,6 +544,29 @@ const ProductosModule: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Mensaje de error de categorías */}
+      {categoriesError && (
+        <div
+          style={{
+            ...cardStyle,
+            border: `1px solid ${colors.dangerBorder}`,
+            background: '#fffafa',
+            padding: 10,
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontSize: 12,
+              color: colors.dangerText,
+              fontWeight: 700,
+            }}
+          >
+            {categoriesError}
+          </p>
+        </div>
+      )}
 
       {/* Mensaje de éxito */}
       {successMessage && (
@@ -432,7 +591,7 @@ const ProductosModule: React.FC = () => {
         </div>
       )}
 
-      {/* Mensaje de error al guardar */}
+      {/* Mensaje de error global */}
       {saveErrorMessage && (
         <div
           style={{
@@ -468,11 +627,26 @@ const ProductosModule: React.FC = () => {
           formData={formData}
           formErrors={formErrors}
           editingProductId={editingProductId}
-          submitting={submitting}
+          submitting={submitting || categoriesLoading}
           categoryOptions={categoryOptions}
+          showQuickCategoryForm={showQuickCategoryForm}
+          categorySubmitting={categorySubmitting}
+          categoryQuickFormData={categoryQuickFormData}
+          categoryQuickFormErrors={categoryQuickFormErrors}
           onChange={handleInputChange}
           onCancel={resetForm}
           onSave={handleSave}
+          onToggleQuickCategoryForm={() => {
+            setShowQuickCategoryForm((prev) => !prev);
+            setCategoryQuickFormErrors({});
+            setSaveErrorMessage(null);
+          }}
+          onQuickCategoryInputChange={handleQuickCategoryInputChange}
+          onQuickCategoryCancel={() => {
+            resetQuickCategoryForm();
+            setSaveErrorMessage(null);
+          }}
+          onQuickCategorySave={handleQuickCategorySave}
         />
       )}
 
