@@ -36,6 +36,8 @@ const PagosModule: React.FC = () => {
     amount: '',
   });
 
+  const [customerSearch, setCustomerSearch] = useState('');
+
   const fetchCredits = async () => {
     try {
       const [creditsData, upcomingPaymentsData, customersData] =
@@ -237,6 +239,12 @@ const PagosModule: React.FC = () => {
   }, [upcomingPayments]);
 
   const upcomingQueue = upcomingPayments.slice(0, 6);
+
+  const filteredCredits = credits.filter((credit) =>
+    getCustomerNameByCreditId(credit.id)
+      .toLowerCase()
+      .includes(customerSearch.toLowerCase().trim())
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -558,8 +566,24 @@ const PagosModule: React.FC = () => {
                     Busca y selecciona a la persona para registrar su abono
                   </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                     <label style={{ fontWeight: 600, fontSize: '0.92rem' }}>Cliente</label>
+
+                    <input
+                      type="text"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      placeholder="Buscar cliente por nombre"
+                      style={{
+                        padding: '0.55rem 0.75rem',
+                        borderRadius: '8px',
+                        border: '1px solid #d9d9d9',
+                        fontSize: '0.92rem',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+
                     <select
                       value={formData.credit_id}
                       onChange={(e) => {
@@ -599,12 +623,19 @@ const PagosModule: React.FC = () => {
                       }}
                     >
                       <option value="">Selecciona un cliente</option>
-                      {credits.map((credit) => (
+                      {filteredCredits.map((credit) => (
                         <option key={credit.id} value={credit.id}>
                           {getCustomerNameByCreditId(credit.id)}
                         </option>
                       ))}
                     </select>
+
+                    {filteredCredits.length === 0 && (
+                      <p style={{ margin: 0, color: '#8c8c8c', fontSize: '0.82rem' }}>
+                        No hay clientes que coincidan con la búsqueda.
+                      </p>
+                    )}
+
                     {formErrors.credit_id && (
                       <p style={{ margin: 0, color: '#cf1322', fontSize: '0.82rem' }}>
                         {formErrors.credit_id}
