@@ -17,6 +17,7 @@ import DashboardPanel from '../dashboard/DashboardPanel';
 import StatusBadge from './ui/StatusBadge';
 import PagosSummaryCards from './ui/PagosSummaryCards';
 import PagosHistoryTable from './ui/PagosHistoryTable';
+import PagosRegisterForm from './ui/PagosRegisterForm';
 
 const PagosModule: React.FC = () => {
   const [credits, setCredits] = useState<Credit[]>([]);
@@ -247,6 +248,29 @@ const PagosModule: React.FC = () => {
       .toLowerCase()
       .includes(customerSearch.toLowerCase().trim())
   );
+    const handleCreditChange = (selectedCreditId: string) => {
+    const upcomingPayment = upcomingPayments.find(
+      (payment) => payment.credit_id === Number(selectedCreditId)
+    );
+
+    setFormData({
+      ...formData,
+      credit_id: selectedCreditId,
+      amount: upcomingPayment ? String(upcomingPayment.amount_due) : '',
+    });
+
+    setFormErrors({
+      ...formErrors,
+      credit_id: '',
+      amount: '',
+    });
+
+    if (selectedCreditId) {
+      fetchPaymentsByCredit(Number(selectedCreditId));
+    } else {
+      setPayments([]);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -532,181 +556,29 @@ const PagosModule: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <DashboardPanel title="Registrar pago">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-                  <p style={{ margin: 0, color: '#595959', fontSize: '0.92rem' }}>
-                    Busca y selecciona a la persona para registrar su abono
-                  </p>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <label style={{ fontWeight: 600, fontSize: '0.92rem' }}>Cliente</label>
-
-                    <input
-                      type="text"
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                      placeholder="Buscar cliente por nombre"
-                      style={{
-                        padding: '0.55rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1px solid #d9d9d9',
-                        fontSize: '0.92rem',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-
-                    <select
-                      value={formData.credit_id}
-                      onChange={(e) => {
-                        const selectedCreditId = e.target.value;
-
-                        const upcomingPayment = upcomingPayments.find(
-                          (payment) =>
-                            payment.credit_id === Number(selectedCreditId)
-                        );
-
-                        setFormData({
-                          ...formData,
-                          credit_id: selectedCreditId,
-                          amount: upcomingPayment
-                            ? String(upcomingPayment.amount_due)
-                            : '',
-                        });
-
-                        setFormErrors({
-                          ...formErrors,
-                          credit_id: '',
-                          amount: '',
-                        });
-
-                        if (selectedCreditId) {
-                          fetchPaymentsByCredit(Number(selectedCreditId));
-                        } else {
-                          setPayments([]);
-                        }
-                      }}
-                      style={{
-                        padding: '0.55rem 0.75rem',
-                        borderRadius: '8px',
-                        border: '1px solid #d9d9d9',
-                        fontSize: '0.92rem',
-                        width: '100%',
-                      }}
-                    >
-                      <option value="">Selecciona un cliente</option>
-                      {filteredCredits.map((credit) => (
-                        <option key={credit.id} value={credit.id}>
-                          {getCustomerNameByCreditId(credit.id)}
-                        </option>
-                      ))}
-                    </select>
-
-                    {filteredCredits.length === 0 && (
-                      <p style={{ margin: 0, color: '#8c8c8c', fontSize: '0.82rem' }}>
-                        No hay clientes que coincidan con la búsqueda.
-                      </p>
-                    )}
-
-                    {formErrors.credit_id && (
-                      <p style={{ margin: 0, color: '#cf1322', fontSize: '0.82rem' }}>
-                        {formErrors.credit_id}
-                      </p>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <label style={{ fontWeight: 600, fontSize: '0.92rem' }}>Monto del pago</label>
-
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: nextScheduledPayment ? '1fr auto' : '1fr',
-                        gap: '0.5rem',
-                      }}
-                    >
-                      <input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={formData.amount}
-                        onChange={(e) => {
-                          setFormData({ ...formData, amount: e.target.value });
-                          setFormErrors({ ...formErrors, amount: '' });
-                        }}
-                        placeholder="Ingresa el monto"
-                        style={{
-                          padding: '0.55rem 0.75rem',
-                          borderRadius: '8px',
-                          border: '1px solid #d9d9d9',
-                          fontSize: '0.92rem',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                        }}
-                      />
-
-                      {nextScheduledPayment && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData({
-                              ...formData,
-                              amount: String(nextScheduledPayment.amount_due),
-                            })
-                          }
-                          style={{
-                            padding: '0.55rem 0.8rem',
-                            borderRadius: '8px',
-                            border: '1px solid #d9d9d9',
-                            background: '#fafafa',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                            fontSize: '0.88rem',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          Monto pactado
-                        </button>
-                      )}
-                    </div>
-
-                    {nextScheduledPayment && formData.amount && (
-                      <p style={{ margin: 0, color: '#8c8c8c', fontSize: '0.82rem' }}>
-                        {Number(formData.amount) <
-                        Number(nextScheduledPayment.amount_due)
-                          ? 'Pago menor al pactado'
-                          : Number(formData.amount) >
-                              Number(nextScheduledPayment.amount_due)
-                            ? 'Pago mayor al pactado'
-                            : 'Pago exacto'}
-                      </p>
-                    )}
-
-                    {formErrors.amount && (
-                      <p style={{ margin: 0, color: '#cf1322', fontSize: '0.82rem' }}>
-                        {formErrors.amount}
-                      </p>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={handleRegisterPayment}
-                      style={{
-                        padding: '0.65rem 0.95rem',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: '#1677ff',
-                        color: '#fff',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        fontSize: '0.92rem',
-                        width: '100%',
-                      }}
-                    >
-                      Registrar pago
-                    </button>
-                  </div>
-                </div>
+                                <PagosRegisterForm
+                  customerSearch={customerSearch}
+                  setCustomerSearch={setCustomerSearch}
+                  filteredCredits={filteredCredits}
+                  formData={formData}
+                  formErrors={formErrors}
+                  nextScheduledPayment={nextScheduledPayment}
+                  onCreditChange={handleCreditChange}
+                  onAmountChange={(value) => {
+                    setFormData({ ...formData, amount: value });
+                    setFormErrors({ ...formErrors, amount: '' });
+                  }}
+                  onUseSuggestedAmount={() =>
+                    setFormData({
+                      ...formData,
+                      amount: nextScheduledPayment
+                        ? String(nextScheduledPayment.amount_due)
+                        : '',
+                    })
+                  }
+                  onSubmit={handleRegisterPayment}
+                  getCustomerNameByCreditId={getCustomerNameByCreditId}
+                />
               </DashboardPanel>
 
               <PagosHistoryTable
