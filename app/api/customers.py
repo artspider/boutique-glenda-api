@@ -1,97 +1,65 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.services.customer_service import CustomerService
+
 from app.schemas.customer_create import CustomerCreate
-from app.models.customer import Customer
 from app.schemas.customer_update import CustomerUpdate
-from app.core.security import get_current_user
-from app.models.user import User
-from app.models.credit import Credit
 from app.schemas.customer_response import CustomerResponse
-from app.schemas.customer_response import CustomerResponse, CustomerListItem
-from app.schemas.customer_account_response import CustomerAccountResponse
 
-router = APIRouter(prefix="/customers", tags=["customers"])
+router = APIRouter(prefix="/customers", tags=["Customers"])
 
 
-@router.post("/")
-def create_customer(
-        payload: CustomerCreate,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user),
-):
-    customer = Customer(
-        first_name=payload.first_name,
-        last_name=payload.last_name,
-        phone=payload.phone,
-        address_line=payload.address_line,
-    )
-    db.add(customer)
-    db.commit()
-    db.refresh(customer)
+"""
+=========================================================
+Customers API
+---------------------------------------------------------
+Responsabilidades:
+- recibir requests HTTP
+- validar entrada con schemas
+- delegar lógica al service
+- retornar respuestas tipadas
+=========================================================
+"""
 
-    return customer
 
-#@router.get("/customers/{customer_id}")
+@router.get("/", response_model=list[CustomerResponse])
+def get_customers(db: Session = Depends(get_db)):
+    service = CustomerService(db)
+    return service.get_all_customers()
+
+
 @router.get("/{customer_id}", response_model=CustomerResponse)
 def get_customer(customer_id: int, db: Session = Depends(get_db)):
-#def get_customer(customer_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
-    customer = db.get(Customer, customer_id)
-    return customer
+    service = CustomerService(db)
+    return service.get_customer_by_id(customer_id)
 
-@router.get("/", response_model=list[CustomerListItem])
-def list_customers(db: Session = Depends(get_db)):
-    customers = db.query(Customer).all()
-    return customers
 
-@router.put("/{customer_id}")
+@router.post(
+    "/",
+    response_model=CustomerResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def create_customer(
+    customer_data: CustomerCreate,
+    db: Session = Depends(get_db)
+):
+    service = CustomerService(db)
+    return service.create_customer(customer_data)
+
+
+@router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
     customer_id: int,
-    payload: CustomerUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    customer_data: CustomerUpdate,
+    db: Session = Depends(get_db)
 ):
-    customer = db.get(Customer, customer_id)
+    service = CustomerService(db)
+    return service.update_customer(customer_id, customer_data)
 
-    customer.first_name = payload.first_name
-    customer.last_name = payload.last_name
-    customer.phone = payload.phone
-    customer.address_line = payload.address_line
 
-    db.commit()
-    db.refresh(customer)
-
-    return customer
-
-@router.delete("/{customer_id}")
-def delete_customer(
-    customer_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    customer = db.get(Customer, customer_id)
-    customer.is_active = False
-
-    db.commit()
-    db.refresh(customer)
-
-    return customer
-
-@router.get("/{customer_id}/account", response_model=CustomerAccountResponse)
-def get_customer_account(
-        customer_id: int,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user),
-):
-    customer = db.get(Customer, customer_id)
-    credits = db.query(Credit).filter(Credit.customer_id == customer_id).all()
-    total_debt = sum(credit.balance for credit in credits)
-
-    return {
-        "customer": customer,
-        "credits": credits,
-        "total_debt": total_debt,
-        "active_credits": [credit for credit in credits if credit.balance > 0],
-        "pending_balance": total_debt,
-    }
+@router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_customer(customer_id: int, db: Session = Depends(get_db)):
+    service = CustomerService(db)
+    service.delete_customer(customer_id)
