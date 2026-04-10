@@ -12,9 +12,10 @@ import { getPayments, registerPayment } from '../../services/paymentService';
 import type { Payment } from '../../services/paymentService';
 import { getCustomers } from '../../services/clientService';
 import type { Customer } from '../../services/clientService';
-import KpiCard from '../dashboard/KpiCard';
+//import KpiCard from '../dashboard/KpiCard';
 import DashboardPanel from '../dashboard/DashboardPanel';
 import StatusBadge from './ui/StatusBadge';
+import PagosSummaryCards from './ui/PagosSummaryCards';
 
 const PagosModule: React.FC = () => {
   const [credits, setCredits] = useState<Credit[]>([]);
@@ -255,43 +256,12 @@ const PagosModule: React.FC = () => {
             : 'Selecciona un cliente para comenzar.'}
         </p>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '0.65rem',
-          }}
-        >
-          <KpiCard
-            title="Total vencido"
-            value={String(summary.overdue)}
-            backgroundColor="#fff1f0"
-            borderColor="#ffa39e"
-            valueColor="#cf1322"
-          />
-
-          <KpiCard
-            title="Pagos del día"
-            value={String(summary.dueToday)}
-            backgroundColor="#f6ffed"
-            borderColor="#b7eb8f"
-            valueColor="#389e0d"
-          />
-
-          <KpiCard
-            title="Próximos pagos"
-            value={String(summary.dueSoon)}
-            backgroundColor="#fffbe6"
-            borderColor="#ffe58f"
-          />
-
-          <KpiCard
-            title="Al corriente"
-            value={String(summary.current)}
-            backgroundColor="#e6f4ff"
-            borderColor="#91caff"
-          />
-        </div>
+                <PagosSummaryCards
+          overdue={summary.overdue}
+          dueToday={summary.dueToday}
+          dueSoon={summary.dueSoon}
+          current={summary.current}
+        />
       </DashboardPanel>
 
       {loading && (
