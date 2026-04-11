@@ -1,16 +1,40 @@
 services:
-  postgres:
+  db:
     image: postgres:15-alpine
     container_name: boutique_glenda_postgres
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_DB: boutique_glenda
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: boutique_glenda
     ports:
       - "5433:5432"
     volumes:
-      - boutique_glenda_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: boutique_glenda_backend
+    restart: always
+    env_file:
+      - .env.docker
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: boutique_glenda_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
 
 volumes:
-  boutique_glenda_postgres_data:
+  postgres_data:
