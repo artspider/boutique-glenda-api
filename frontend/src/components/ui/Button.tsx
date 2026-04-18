@@ -35,7 +35,7 @@ const variantStyleMap: Record<ButtonVariant, CSSProperties> = {
 
 const sizeStyleMap: Record<ButtonSize, CSSProperties> = {
   sm: {
-    minHeight: '2rem',
+    minHeight: '2.25rem',
     fontSize: 'var(--font-size-xs)',
     padding: '0.35rem 0.65rem',
   },
@@ -62,6 +62,8 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const showPrimaryHover = variant === 'primary' && !isDisabled;
+  const showSecondaryHover = variant === 'secondary' && !isDisabled;
 
   return (
     <button
@@ -77,10 +79,17 @@ export default function Button({
         fontWeight: 'var(--font-weight-bold)',
         lineHeight: '1',
         transition:
-          'background var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), opacity var(--duration-fast) var(--easing-standard)',
+          'background var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), opacity var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard)',
         cursor: isDisabled ? 'not-allowed' : 'pointer',
         width: fullWidth ? '100%' : undefined,
+        transform: isDisabled ? 'none' : 'translateY(0)',
+        filter: showPrimaryHover ? 'saturate(1)' : undefined,
         ...variantStyleMap[variant],
+        ...(showSecondaryHover
+          ? {
+              background: 'var(--color-surface-0)',
+            }
+          : {}),
         ...sizeStyleMap[size],
         ...style,
       }}

@@ -46,6 +46,7 @@ type NavItem = {
 ========================================================= */
 
 const ACTIVE_MODULE_STORAGE_KEY = 'boutique_glenda_active_module';
+const MOBILE_NAV_ID = 'app-mobile-sidebar-nav';
 
 const navItems: NavItem[] = [
   {
@@ -195,6 +196,8 @@ const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onToggleMobileSidebar}
           aria-label={isMobileSidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={isMobileSidebarOpen}
+          aria-controls={MOBILE_NAV_ID}
           style={{
             border: '1px solid var(--color-border-strong)',
             backgroundColor: 'var(--color-surface-0)',
@@ -342,7 +345,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     {/* =====================================================
         NAVEGACIÓN
     ===================================================== */}
-    <nav>
+    <nav id={isMobileDrawer ? MOBILE_NAV_ID : undefined} aria-label="Navegación principal">
       <ul
         style={{
           listStyle: 'none',
@@ -367,6 +370,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   }
                 }}
                 title={isCompact ? item.label : undefined}
+                aria-current={isActive ? 'page' : undefined}
                 style={{
                   width: '100%',
                   textAlign: 'left',
@@ -545,6 +549,19 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     };
   }, [isMobileView, isMobileSidebarOpen]);
 
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isMobileSidebarOpen]);
+
   /* =======================================================
       FUNCIONES DE APOYO
   ======================================================= */
@@ -596,6 +613,14 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         {isMobileView && isMobileSidebarOpen && (
           <div
             onClick={closeMobileSidebar}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' || event.key === 'Enter') {
+                closeMobileSidebar();
+              }
+            }}
+            role="button"
+            aria-label="Cerrar menú lateral"
+            tabIndex={0}
             style={{
               position: 'fixed',
               inset: 0,

@@ -84,6 +84,8 @@ textarea {
 button {
   border: 0;
   background: none;
+  min-height: 2.5rem;
+  min-width: 2.5rem;
 }
 
 button:disabled {
@@ -94,7 +96,7 @@ button:disabled {
 input,
 select,
 textarea {
-  min-height: 2.25rem;
+  min-height: 2.5rem;
 }
 
 input::placeholder,
@@ -109,6 +111,10 @@ button:focus-visible,
 a:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.96;
 }
 
 table {
@@ -128,6 +134,10 @@ main {
 @media (max-width: 768px) {
   body {
     font-size: var(--font-size-xs);
+  }
+
+  main {
+    padding: var(--space-3);
   }
 }
 
