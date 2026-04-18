@@ -1,23 +1,21 @@
 import React from 'react';
+import { Card } from '../ui';
 
 type DashboardPanelProps = {
-  title: string;
+  title?: string;
   children: React.ReactNode;
 };
 
 const DashboardPanel: React.FC<DashboardPanelProps> = ({ title, children }) => {
   return (
-    <section
+    <Card
       style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #ddd',
-        borderRadius: '12px',
         padding: '1rem',
       }}
     >
-      <h3 style={{ marginTop: 0, marginBottom: '0.75rem' }}>{title}</h3>
+      {title ? <h3 style={{ marginTop: 0, marginBottom: '0.75rem' }}>{title}</h3> : null}
       <div>{children}</div>
-    </section>
+    </Card>
   );
 };
 

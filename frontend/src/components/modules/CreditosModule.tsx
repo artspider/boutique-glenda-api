@@ -18,6 +18,7 @@ import CreditosList from './creditos/ui/CreditosList';
 import CreditoDetailPanel from './creditos/ui/CreditoDetailPanel';
 import CreditoSchedulePanel from './creditos/ui/CreditoSchedulePanel';
 import type { CreditItem } from './creditos/types';
+import { Alert, SectionHeader } from '../ui';
 
 const CreditosModule: React.FC = () => {
   const [credits, setCredits] = useState<Credit[]>([]);
@@ -197,6 +198,11 @@ const CreditosModule: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <SectionHeader
+        title="Créditos"
+        subtitle="Estado actual de créditos activos, vencidos, pagos y cronogramas."
+      />
+
       <DashboardPanel title="">
         <p style={{ marginTop: 0, marginBottom: '0.75rem' }}>
           {selectedCredit
@@ -213,15 +219,11 @@ const CreditosModule: React.FC = () => {
       </DashboardPanel>
 
       {loading && (
-        <DashboardPanel title="">
-          <p style={{ margin: 0, color: '#8c8c8c' }}>Cargando créditos...</p>
-        </DashboardPanel>
+        <Alert tone="info">Cargando créditos...</Alert>
       )}
 
       {error && (
-        <DashboardPanel title="">
-          <p style={{ margin: 0, color: '#cf1322' }}>{error}</p>
-        </DashboardPanel>
+        <Alert tone="danger">{error}</Alert>
       )}
 
       {!loading && !error && (

@@ -1,8 +1,2 @@
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-}
-
-main {
-  padding: 24px;
-}
+@import './styles/tokens.css';
+@import './styles/base.css';

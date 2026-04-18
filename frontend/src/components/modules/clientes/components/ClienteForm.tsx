@@ -1,21 +1,12 @@
 import React from 'react';
 import type { ClienteFormProps } from '../types';
 import {
-  cardStyle,
-  sectionHeaderStyle,
   sectionTitleStyle,
-  metaTextStyle,
   formGridStyle,
   fieldGroupStyle,
-  labelStyle,
-  inputStyle,
-  inputErrorStyle,
-  errorTextStyle,
-  helperTextStyle,
   formActionsStyle,
-  secondaryButtonStyle,
-  successButtonStyle,
 } from '../styles';
+import { Button, Card, Input, SectionHeader, Textarea } from '../../../ui';
 
 /**
  * =========================================================
@@ -50,17 +41,11 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
   onCancel,
 }) => {
   return (
-    <div style={cardStyle}>
-      <div style={sectionHeaderStyle}>
-        <div>
-          <h3 style={sectionTitleStyle}>
-            {isEditing ? 'Editar cliente' : 'Registrar nuevo cliente'}
-          </h3>
-          <p style={metaTextStyle}>
-            Captura información útil para ventas, cobranza y seguimiento del cliente.
-          </p>
-        </div>
-      </div>
+    <Card>
+      <SectionHeader
+        title={isEditing ? 'Editar cliente' : 'Registrar nuevo cliente'}
+        subtitle="Captura información útil para ventas, cobranza y seguimiento del cliente."
+      />
 
       {/* =====================================================
           Sección 1: Identidad básica
@@ -77,92 +62,52 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
         </h4>
 
         <div style={formGridStyle}>
-          <div style={fieldGroupStyle}>
-            <label htmlFor="cliente-first-name" style={labelStyle}>
-              Nombre *
-            </label>
-            <input
-              id="cliente-first-name"
-              type="text"
-              placeholder="Ej. María"
-              value={formData.first_name}
-              onChange={(e) => onFirstNameChange(e.target.value)}
-              style={{
-                ...inputStyle,
-                ...(formErrors.first_name ? inputErrorStyle : {}),
-              }}
-            />
-            {formErrors.first_name ? (
-              <p style={errorTextStyle}>{formErrors.first_name}</p>
-            ) : null}
-          </div>
+          <Input
+            id="cliente-first-name"
+            label="Nombre *"
+            type="text"
+            placeholder="Ej. Maria"
+            value={formData.first_name}
+            onChange={(e) => onFirstNameChange(e.target.value)}
+            error={formErrors.first_name}
+            containerStyle={fieldGroupStyle}
+          />
 
-          <div style={fieldGroupStyle}>
-            <label htmlFor="cliente-last-name" style={labelStyle}>
-              Apellido
-            </label>
-            <input
-              id="cliente-last-name"
-              type="text"
-              placeholder="Ej. López"
-              value={formData.last_name}
-              onChange={(e) => onLastNameChange(e.target.value)}
-              style={{
-                ...inputStyle,
-                ...(formErrors.last_name ? inputErrorStyle : {}),
-              }}
-            />
-            {formErrors.last_name ? (
-              <p style={errorTextStyle}>{formErrors.last_name}</p>
-            ) : null}
-          </div>
+          <Input
+            id="cliente-last-name"
+            label="Apellido"
+            type="text"
+            placeholder="Ej. Lopez"
+            value={formData.last_name}
+            onChange={(e) => onLastNameChange(e.target.value)}
+            error={formErrors.last_name}
+            containerStyle={fieldGroupStyle}
+          />
 
-          <div style={fieldGroupStyle}>
-            <label htmlFor="cliente-phone" style={labelStyle}>
-              Teléfono *
-            </label>
-            <input
-              id="cliente-phone"
-              type="text"
-              inputMode="numeric"
-              placeholder="Ej. 7331234567"
-              value={formData.phone}
-              onChange={(e) => onPhoneChange(e.target.value)}
-              style={{
-                ...inputStyle,
-                ...(formErrors.phone ? inputErrorStyle : {}),
-              }}
-            />
-            {formErrors.phone ? (
-              <p style={errorTextStyle}>{formErrors.phone}</p>
-            ) : (
-              <p style={helperTextStyle}>Solo números.</p>
-            )}
-          </div>
+          <Input
+            id="cliente-phone"
+            label="Telefono *"
+            type="text"
+            inputMode="numeric"
+            placeholder="Ej. 7331234567"
+            value={formData.phone}
+            onChange={(e) => onPhoneChange(e.target.value)}
+            error={formErrors.phone}
+            helperText="Solo numeros."
+            containerStyle={fieldGroupStyle}
+          />
 
-          <div style={fieldGroupStyle}>
-            <label htmlFor="cliente-email" style={labelStyle}>
-              Red social / contacto alterno
-            </label>
-            <input
-              id="cliente-email"
-              type="text"
-              placeholder="Ej. Facebook, Instagram o usuario"
-              value={formData.email}
-              onChange={(e) => onEmailChange(e.target.value)}
-              style={{
-                ...inputStyle,
-                ...(formErrors.email ? inputErrorStyle : {}),
-              }}
-            />
-            {formErrors.email ? (
-              <p style={errorTextStyle}>{formErrors.email}</p>
-            ) : (
-              <p style={helperTextStyle}>
-                Opcional. Usa el formato: insta@usuario o face@usuario.
-              </p>
-            )}
-          </div>
+          <Input
+            id="cliente-email"
+            label="Red social / contacto alterno"
+            type="text"
+            placeholder="Ej. Facebook, Instagram o usuario"
+            value={formData.email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            error={formErrors.email}
+            helperText="Opcional. Usa el formato: insta@usuario o face@usuario."
+            containerStyle={fieldGroupStyle}
+          />
         </div>
       </div>
 
@@ -181,57 +126,41 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
         </h4>
 
         <div style={formGridStyle}>
-          <div style={fieldGroupStyle}>
-            <label htmlFor="cliente-zone" style={labelStyle}>
-              Zona
-            </label>
-            <input
-              id="cliente-zone"
-              type="text"
-              placeholder="Ej. Centro"
-              value={formData.zone}
-              onChange={(e) => onZoneChange(e.target.value)}
-              style={inputStyle}
-            />
-            <p style={helperTextStyle}>Útil para organizar rutas y cobranza.</p>
-          </div>
+          <Input
+            id="cliente-zone"
+            label="Zona"
+            type="text"
+            placeholder="Ej. Centro"
+            value={formData.zone}
+            onChange={(e) => onZoneChange(e.target.value)}
+            helperText="Util para organizar rutas y cobranza."
+            containerStyle={fieldGroupStyle}
+          />
 
-          <div style={fieldGroupStyle}>
-            <label htmlFor="cliente-address-line" style={labelStyle}>
-              Dirección
-            </label>
-            <input
-              id="cliente-address-line"
-              type="text"
-              placeholder="Ej. Calle Juárez 24"
-              value={formData.address_line}
-              onChange={(e) => onAddressLineChange(e.target.value)}
-              style={inputStyle}
-            />
-            <p style={helperTextStyle}>Opcional, pero útil para entregas.</p>
-          </div>
+          <Input
+            id="cliente-address-line"
+            label="Direccion"
+            type="text"
+            placeholder="Ej. Calle Juarez 24"
+            value={formData.address_line}
+            onChange={(e) => onAddressLineChange(e.target.value)}
+            helperText="Opcional, pero util para entregas."
+            containerStyle={fieldGroupStyle}
+          />
 
-          <div
-            style={{
+          <Input
+            id="cliente-address-reference"
+            label="Referencia"
+            type="text"
+            placeholder="Ej. Casa azul junto a la tienda"
+            value={formData.address_reference}
+            onChange={(e) => onAddressReferenceChange(e.target.value)}
+            helperText="Ayuda a ubicar al cliente mas rapido."
+            containerStyle={{
               ...fieldGroupStyle,
               gridColumn: '1 / -1',
             }}
-          >
-            <label htmlFor="cliente-address-reference" style={labelStyle}>
-              Referencia
-            </label>
-            <input
-              id="cliente-address-reference"
-              type="text"
-              placeholder="Ej. Casa azul junto a la tienda"
-              value={formData.address_reference}
-              onChange={(e) => onAddressReferenceChange(e.target.value)}
-              style={inputStyle}
-            />
-            <p style={helperTextStyle}>
-              Ayuda a ubicar al cliente más rápido.
-            </p>
-          </div>
+          />
         </div>
       </div>
 
@@ -250,29 +179,19 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
         </h4>
 
         <div style={formGridStyle}>
-          <div style={fieldGroupStyle}>
-            <label htmlFor="cliente-credit-limit" style={labelStyle}>
-              Límite de crédito
-            </label>
-            <input
-              id="cliente-credit-limit"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0"
-              value={formData.credit_limit}
-              onChange={(e) => onCreditLimitChange(e.target.value)}
-              style={{
-                ...inputStyle,
-                ...(formErrors.credit_limit ? inputErrorStyle : {}),
-              }}
-            />
-            {formErrors.credit_limit ? (
-              <p style={errorTextStyle}>{formErrors.credit_limit}</p>
-            ) : (
-              <p style={helperTextStyle}>Por defecto puede iniciar en 0.</p>
-            )}
-          </div>
+          <Input
+            id="cliente-credit-limit"
+            label="Limite de credito"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0"
+            value={formData.credit_limit}
+            onChange={(e) => onCreditLimitChange(e.target.value)}
+            error={formErrors.credit_limit}
+            helperText="Por defecto puede iniciar en 0."
+            containerStyle={fieldGroupStyle}
+          />
         </div>
       </div>
 
@@ -290,53 +209,34 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
           Observaciones
         </h4>
 
-        <div style={fieldGroupStyle}>
-          <label htmlFor="cliente-notes" style={labelStyle}>
-            Notas
-          </label>
-          <textarea
-            id="cliente-notes"
-            placeholder="Ej. Prefiere pago los viernes, trabaja cerca del mercado..."
-            value={formData.notes}
-            onChange={(e) => onNotesChange(e.target.value)}
-            style={{
-              ...inputStyle,
-              minHeight: 82,
-              resize: 'vertical',
-            }}
-          />
-          <p style={helperTextStyle}>
-            Espacio para referencias comerciales o de cobranza.
-          </p>
-        </div>
+        <Textarea
+          id="cliente-notes"
+          label="Notas"
+          placeholder="Ej. Prefiere pago los viernes, trabaja cerca del mercado..."
+          value={formData.notes}
+          onChange={(e) => onNotesChange(e.target.value)}
+          helperText="Espacio para referencias comerciales o de cobranza."
+          rows={4}
+          containerStyle={fieldGroupStyle}
+        />
       </div>
 
       <div style={formActionsStyle}>
-        <button
-          type="button"
-          onClick={onCancel}
-          style={secondaryButtonStyle}
-          disabled={saving}
-        >
+        <Button type="button" onClick={onCancel} variant="secondary" disabled={saving}>
           Cancelar
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={onSubmit}
-          style={successButtonStyle}
+          variant="primary"
+          loading={saving}
           disabled={saving}
         >
-          {saving
-            ? isEditing
-              ? 'Actualizando...'
-              : 'Guardando...'
-            : isEditing
-              ? 'Actualizar'
-              : 'Guardar'}
-        </button>
+          {isEditing ? 'Actualizar' : 'Guardar'}
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

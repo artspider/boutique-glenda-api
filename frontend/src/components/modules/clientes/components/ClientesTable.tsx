@@ -2,9 +2,6 @@ import React from 'react';
 import type { ClientesTableProps } from '../types';
 import { formatCreditLimit, getCustomerFullName } from '../utils';
 import {
-  cardStyle,
-  sectionHeaderStyle,
-  sectionTitleStyle,
   metaTextStyle,
   tableContainerStyle,
   tableStyle,
@@ -27,6 +24,7 @@ import {
   softCardStyle,
   summaryLabelStyle,
 } from '../styles';
+import { Button, Card, EmptyState, Input, SectionHeader } from '../../../ui';
 
 /**
  * =========================================================
@@ -102,18 +100,12 @@ const ClientesTable: React.FC<ClientesTableProps> = ({
   const visiblePages = getVisiblePages();
 
   return (
-    <div style={cardStyle}>
-      <div style={sectionHeaderStyle}>
-        <div>
-          <h3 style={sectionTitleStyle}>Listado de clientes</h3>
-          <p style={metaTextStyle}>
-            Mostrando: <strong>{showingActive ? 'Activos' : 'Inactivos'}</strong> ·
-            Resultados: <strong>{totalResults}</strong> · Página{' '}
-            <strong>{totalPages === 0 ? 0 : currentPage}</strong> de{' '}
-            <strong>{totalPages}</strong>
-          </p>
-        </div>
-      </div>
+    <Card>
+      <SectionHeader
+        title="Listado de clientes"
+        subtitle={`Mostrando: ${showingActive ? 'Activos' : 'Inactivos'} - Resultados: ${totalResults} - Pagina ${totalPages === 0 ? 0 : currentPage} de ${totalPages}`}
+        style={{ marginBottom: 10 }}
+      />
 
       {/* Barra de control del listado */}
       <div
@@ -122,19 +114,16 @@ const ClientesTable: React.FC<ClientesTableProps> = ({
           marginBottom: 10,
         }}
       >
-        <div style={fieldGroupStyle}>
-          <label htmlFor="clientes-search" style={labelStyle}>
-            Buscar cliente
-          </label>
-          <input
-            id="clientes-search"
-            type="text"
-            placeholder="Buscar por nombre, teléfono o zona"
-            value={searchTerm}
-            onChange={(e) => onSearchTermChange(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
+        <Input
+          id="clientes-search"
+          label="Buscar cliente"
+          type="text"
+          placeholder="Buscar por nombre, telefono o zona"
+          value={searchTerm}
+          onChange={(e) => onSearchTermChange(e.target.value)}
+          containerStyle={fieldGroupStyle}
+          style={inputStyle}
+        />
 
         <div
           style={{
@@ -150,21 +139,23 @@ const ClientesTable: React.FC<ClientesTableProps> = ({
               flexWrap: 'wrap',
             }}
           >
-            <button
+            <Button
               type="button"
               onClick={() => onChangeView('active')}
+              variant={showingActive ? 'primary' : 'secondary'}
               style={showingActive ? primaryButtonStyle : secondaryButtonStyle}
             >
               Activos
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               onClick={() => onChangeView('inactive')}
+              variant={!showingActive ? 'primary' : 'secondary'}
               style={!showingActive ? primaryButtonStyle : secondaryButtonStyle}
             >
               Inactivos
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -184,12 +175,17 @@ const ClientesTable: React.FC<ClientesTableProps> = ({
           <tbody>
             {clientes.length === 0 ? (
               <tr>
-                <td colSpan={5} style={emptyStateStyle}>
-                  {searchTerm.trim()
-                    ? 'No hay clientes que coincidan con tu búsqueda.'
-                    : showingActive
-                      ? 'No hay clientes activos registrados.'
-                      : 'No hay clientes inactivos registrados.'}
+                <td colSpan={5} style={emptyStateStyle as React.CSSProperties}>
+                  <EmptyState
+                    title="Sin resultados"
+                    description={
+                      searchTerm.trim()
+                        ? 'No hay clientes que coincidan con tu busqueda.'
+                        : showingActive
+                          ? 'No hay clientes activos registrados.'
+                          : 'No hay clientes inactivos registrados.'
+                    }
+                  />
                 </td>
               </tr>
             ) : (
@@ -264,9 +260,7 @@ const ClientesTable: React.FC<ClientesTableProps> = ({
 
                   {/* Estado */}
                   <td style={tdStyle}>
-                    <span
-                      style={cliente.is_active ? badgeActiveStyle : badgeInactiveStyle}
-                    >
+                    <span style={cliente.is_active ? badgeActiveStyle : badgeInactiveStyle}>
                       {cliente.is_active ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
@@ -274,28 +268,27 @@ const ClientesTable: React.FC<ClientesTableProps> = ({
                   {/* Acciones */}
                   <td style={tdStyle}>
                     <div style={rowActionsStyle}>
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        size="sm"
                         style={editButtonStyle}
                         onClick={() => onEdit(cliente)}
                       >
                         Editar datos
-                      </button>
+                      </Button>
 
-                      <button
+                      <Button
                         type="button"
+                        variant="danger"
+                        size="sm"
                         style={dangerButtonStyle}
                         onClick={() => onToggleStatus(cliente)}
+                        loading={deletingId === cliente.id}
                         disabled={deletingId === cliente.id}
                       >
-                        {deletingId === cliente.id
-                          ? cliente.is_active
-                            ? 'Desactivando...'
-                            : 'Activando...'
-                          : cliente.is_active
-                            ? 'Desactivar'
-                            : 'Activar'}
-                      </button>
+                        {cliente.is_active ? 'Desactivar' : 'Activar'}
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -329,38 +322,41 @@ const ClientesTable: React.FC<ClientesTableProps> = ({
               flexWrap: 'wrap',
             }}
           >
-            <button
+            <Button
               type="button"
               onClick={onPreviousPage}
               disabled={currentPage <= 1}
+              variant="secondary"
               style={secondaryButtonStyle}
             >
               Anterior
-            </button>
+            </Button>
 
             {visiblePages.map((page) => (
-              <button
+              <Button
                 key={page}
                 type="button"
                 onClick={() => onGoToPage(page)}
+                variant={page === currentPage ? 'primary' : 'secondary'}
                 style={page === currentPage ? primaryButtonStyle : secondaryButtonStyle}
               >
                 {page}
-              </button>
+              </Button>
             ))}
 
-            <button
+            <Button
               type="button"
               onClick={onNextPage}
               disabled={currentPage >= totalPages}
+              variant="secondary"
               style={secondaryButtonStyle}
             >
               Siguiente
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
-    </div>
+    </Card>
   );
 };
 

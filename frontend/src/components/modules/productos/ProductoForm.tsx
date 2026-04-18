@@ -10,11 +10,10 @@ import {
   inputStyle,
   labelStyle,
   pillBase,
-  primaryButtonStyle,
-  secondaryButtonStyle,
   softCardStyle,
 } from './styles';
 import { getMarginBadgeStyle, getStockBadgeStyle, money, toNumber } from './utils';
+import { Badge, Button, Card, SectionHeader } from '../../ui';
 
 /**
  * Formulario de alta / edición de productos.
@@ -95,33 +94,18 @@ const ProductoForm: React.FC<ProductoFormProps> = ({
   };
 
   return (
-    <div style={{ ...cardStyle, padding: 10 }}>
+    <Card style={{ ...cardStyle, padding: 10 }}>
       {/* Encabezado del formulario */}
-      <div
-        style={{
-          marginBottom: 8,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div>
-          <h3 style={{ margin: 0, fontSize: 14, color: colors.text }}>
-            {editingProductId !== null ? 'Editar producto' : 'Nuevo producto'}
-          </h3>
-          <p style={{ margin: '2px 0 0 0', fontSize: 11, color: colors.textMuted }}>
-            Captura rápida del catálogo.
-          </p>
-        </div>
-
-        {editingProductId !== null && (
-          <span style={{ ...pillBase, background: colors.infoBg, color: colors.infoText }}>
-            Modo edición
-          </span>
-        )}
-      </div>
+      <SectionHeader
+        title={editingProductId !== null ? 'Editar producto' : 'Nuevo producto'}
+        subtitle="Captura rapida del catalogo."
+        actions={
+          editingProductId !== null ? (
+            <Badge tone="info">Modo edición</Badge>
+          ) : null
+        }
+        style={{ marginBottom: 8 }}
+      />
 
       {/* Grid principal */}
       <div
@@ -207,18 +191,15 @@ const ProductoForm: React.FC<ProductoFormProps> = ({
               >
                 <label style={{ ...labelStyle, marginBottom: 0 }}>Categoría *</label>
 
-                <button
+                <Button
                   type="button"
                   onClick={onToggleQuickCategoryForm}
-                  style={{
-                    ...secondaryButtonStyle,
-                    padding: '5px 8px',
-                    fontSize: 11,
-                  }}
+                  variant="secondary"
+                  size="sm"
                   disabled={submitting || categorySubmitting}
                 >
                   {showQuickCategoryForm ? 'Ocultar' : 'Nueva'}
-                </button>
+                </Button>
               </div>
 
               <select
@@ -327,32 +308,25 @@ const ProductoForm: React.FC<ProductoFormProps> = ({
                       flexWrap: 'wrap',
                     }}
                   >
-                    <button
+                    <Button
                       type="button"
-                      style={{
-                        ...secondaryButtonStyle,
-                        padding: '6px 10px',
-                        fontSize: 11,
-                      }}
+                      variant="secondary"
+                      size="sm"
                       onClick={onQuickCategoryCancel}
                       disabled={categorySubmitting}
                     >
                       Cancelar
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                       type="button"
-                      style={{
-                        ...primaryButtonStyle,
-                        padding: '6px 10px',
-                        fontSize: 11,
-                        opacity: categorySubmitting ? 0.7 : 1,
-                      }}
+                      size="sm"
                       onClick={onQuickCategorySave}
+                      loading={categorySubmitting}
                       disabled={categorySubmitting}
                     >
-                      {categorySubmitting ? 'Guardando...' : 'Guardar categoría'}
-                    </button>
+                      Guardar categoría
+                    </Button>
                   </div>
                 </div>
               )}
@@ -549,20 +523,25 @@ const ProductoForm: React.FC<ProductoFormProps> = ({
           flexWrap: 'wrap',
         }}
       >
-        <button type="button" style={secondaryButtonStyle} onClick={onCancel} disabled={submitting}>
-          Cancelar
-        </button>
-
-        <button
+        <Button
           type="button"
-          style={{ ...primaryButtonStyle, opacity: submitting ? 0.7 : 1 }}
-          onClick={onSave}
+          variant="secondary"
+          onClick={onCancel}
           disabled={submitting}
         >
-          {submitting ? 'Guardando...' : 'Guardar'}
-        </button>
+          Cancelar
+        </Button>
+
+        <Button
+          type="button"
+          onClick={onSave}
+          loading={submitting}
+          disabled={submitting}
+        >
+          Guardar
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

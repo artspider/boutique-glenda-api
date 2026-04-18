@@ -19,6 +19,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import { Card, SectionHeader } from './ui';
 
 /* =========================================================
    TIPOS
@@ -45,6 +46,7 @@ type NavItem = {
 ========================================================= */
 
 const ACTIVE_MODULE_STORAGE_KEY = 'boutique_glenda_active_module';
+const MOBILE_NAV_ID = 'app-mobile-sidebar-nav';
 
 const navItems: NavItem[] = [
   {
@@ -163,8 +165,8 @@ const Header: React.FC<HeaderProps> = ({
   <header
     style={{
       height: isMobileView ? '52px' : '60px',
-      backgroundColor: '#ffffff',
-      borderBottom: '1px solid #e5e7eb',
+      backgroundColor: 'var(--color-surface-0)',
+      borderBottom: '1px solid var(--color-border-soft)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -194,11 +196,13 @@ const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onToggleMobileSidebar}
           aria-label={isMobileSidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={isMobileSidebarOpen}
+          aria-controls={MOBILE_NAV_ID}
           style={{
-            border: '1px solid #d1d5db',
-            backgroundColor: '#ffffff',
-            color: '#111827',
-            borderRadius: '10px',
+            border: '1px solid var(--color-border-strong)',
+            backgroundColor: 'var(--color-surface-0)',
+            color: 'var(--color-text-primary)',
+            borderRadius: 'var(--radius-md)',
             width: '34px',
             height: '34px',
             display: 'inline-flex',
@@ -221,7 +225,7 @@ const Header: React.FC<HeaderProps> = ({
             margin: 0,
             fontSize: isMobileView ? '0.6rem' : '0.75rem',
             fontWeight: 600,
-            color: '#2563eb',
+            color: 'var(--color-brand-700)',
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}
@@ -233,7 +237,7 @@ const Header: React.FC<HeaderProps> = ({
           style={{
             margin: '0.05rem 0 0 0',
             fontSize: isMobileView ? '0.95rem' : '1.15rem',
-            color: '#111827',
+            color: 'var(--color-text-primary)',
             lineHeight: 1.2,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -254,7 +258,7 @@ const Header: React.FC<HeaderProps> = ({
           style={{
             margin: 0,
             fontSize: '0.82rem',
-            color: '#6b7280',
+            color: 'var(--color-text-muted)',
           }}
         >
           Sistema de gestión comercial
@@ -263,7 +267,7 @@ const Header: React.FC<HeaderProps> = ({
           style={{
             margin: '0.15rem 0 0 0',
             fontSize: '0.76rem',
-            color: '#9ca3af',
+            color: 'var(--color-text-muted)',
           }}
         >
           MVP operativo
@@ -295,7 +299,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   <aside
     style={{
       width: isCompact ? '70px' : '240px',
-      backgroundColor: '#111827',
+      backgroundColor: '#0f172a',
       color: '#ffffff',
       display: 'flex',
       flexDirection: 'column',
@@ -313,14 +317,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div
         style={{
           padding: '0.5rem 0.5rem 1rem 0.5rem',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: '1px solid rgba(255,255,255,0.12)',
         }}
       >
         <h2
           style={{
             margin: 0,
             fontSize: '1rem',
-            color: '#f9fafb',
+            color: '#f8fafc',
           }}
         >
           Panel principal
@@ -341,7 +345,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     {/* =====================================================
         NAVEGACIÓN
     ===================================================== */}
-    <nav>
+    <nav id={isMobileDrawer ? MOBILE_NAV_ID : undefined} aria-label="Navegación principal">
       <ul
         style={{
           listStyle: 'none',
@@ -366,18 +370,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                   }
                 }}
                 title={isCompact ? item.label : undefined}
+                aria-current={isActive ? 'page' : undefined}
                 style={{
                   width: '100%',
                   textAlign: 'left',
                   border: isActive
-                    ? '1px solid #60a5fa'
+                    ? '1px solid #93c5fd'
                     : '1px solid rgba(255,255,255,0.06)',
-                  backgroundColor: isActive ? '#1d4ed8' : '#1f2937',
+                  backgroundColor: isActive ? '#1d4ed8' : '#172030',
                   color: '#ffffff',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--radius-md)',
                   padding: isCompact ? '0.6rem 0.5rem' : '0.65rem 0.75rem',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
+                  transition: 'all var(--duration-fast) var(--easing-standard)',
                 }}
               >
                 <div
@@ -544,6 +549,19 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     };
   }, [isMobileView, isMobileSidebarOpen]);
 
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isMobileSidebarOpen]);
+
   /* =======================================================
       FUNCIONES DE APOYO
   ======================================================= */
@@ -559,7 +577,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#f3f4f6',
+        backgroundColor: 'var(--color-surface-50)',
       }}
     >
       {/* ===================================================
@@ -575,7 +593,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       <div
         style={{
           display: 'flex',
-          minHeight: 'calc(100vh - 60px)',
+          minHeight: 'calc(100vh - var(--header-height))',
         }}
       >
         {/* =================================================
@@ -595,6 +613,14 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         {isMobileView && isMobileSidebarOpen && (
           <div
             onClick={closeMobileSidebar}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' || event.key === 'Enter') {
+                closeMobileSidebar();
+              }
+            }}
+            role="button"
+            aria-label="Cerrar menú lateral"
+            tabIndex={0}
             style={{
               position: 'fixed',
               inset: 0,
@@ -618,7 +644,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               transform: isMobileSidebarOpen
                 ? 'translateX(0)'
                 : 'translateX(-100%)',
-              transition: 'transform 0.25s ease',
+              transition: 'transform var(--duration-normal) var(--easing-standard)',
               zIndex: 50,
               boxShadow: isMobileSidebarOpen
                 ? '4px 0 16px rgba(0,0,0,0.18)'
@@ -641,55 +667,30 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         <main
           style={{
             flex: 1,
-            padding: isMobileView ? '0.75rem' : '1rem',
+            padding: isMobileView ? '0.75rem' : '1rem 1.1rem',
             minWidth: 0,
           }}
         >
           {/* ===============================================
               CABECERA DEL MÓDULO ACTIVO
           =============================================== */}
-          <section
+          <Card
+            variant="default"
+            padding="md"
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: isMobileView ? '12px' : '14px',
-              padding: isMobileView ? '0.85rem' : '1rem',
               marginBottom: '0.85rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
             }}
           >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: isMobileView ? '0.95rem' : '1rem',
-                color: '#111827',
-              }}
-            >
-              {moduleTitles[activeModule]}
-            </h2>
-            <p
-              style={{
-                margin: '0.35rem 0 0 0',
-                color: '#6b7280',
-                fontSize: isMobileView ? '0.82rem' : '0.88rem',
-              }}
-            >
-              {moduleDescriptions[activeModule]}
-            </p>
-          </section>
+            <SectionHeader
+              title={moduleTitles[activeModule]}
+              subtitle={moduleDescriptions[activeModule]}
+            />
+          </Card>
 
           {/* ===============================================
               CONTENEDOR DEL MÓDULO
           =============================================== */}
-          <section
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: isMobileView ? '12px' : '14px',
-              padding: isMobileView ? '0.75rem' : '1rem',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
-            }}
-          >
+          <Card variant="default" padding={isMobileView ? 'sm' : 'md'}>
             {activeModule === 'dashboard' && <DashboardModule />}
             {activeModule === 'clientes' && <ClientesModule />}
             {activeModule === 'productos' && <ProductosModule />}
@@ -698,7 +699,7 @@ const LayoutBase: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             {activeModule === 'inventario' && <InventarioModule />}
             {activeModule === 'creditos' && <CreditosModule />}
             {children && <div>{children}</div>}
-          </section>
+          </Card>
         </main>
       </div>
     </div>
