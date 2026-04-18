@@ -1,0 +1,89 @@
+:root {
+  /* Typography */
+  --font-family-sans: "Manrope", "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-family-mono: "JetBrains Mono", "Cascadia Mono", "Consolas", monospace;
+  --font-size-2xs: 0.6875rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.45;
+  --line-height-relaxed: 1.65;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
+  --radius-pill: 9999px;
+
+  /* Neutral */
+  --color-surface-0: #ffffff;
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-200: #e2e8f0;
+  --color-border-soft: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+
+  /* Brand / accent */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e3a8a;
+
+  /* Semantic */
+  --color-success-bg: #ecfdf3;
+  --color-success-border: #86efac;
+  --color-success-text: #166534;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fcd34d;
+  --color-warning-text: #a16207;
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fca5a5;
+  --color-danger-text: #b91c1c;
+  --color-info-bg: #eff6ff;
+  --color-info-border: #93c5fd;
+  --color-info-text: #1d4ed8;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.08);
+  --shadow-md: 0 6px 18px rgb(15 23 42 / 0.08);
+  --shadow-lg: 0 14px 36px rgb(15 23 42 / 0.12);
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-normal: 220ms;
+  --duration-slow: 320ms;
+  --easing-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Focus */
+  --focus-ring-color: rgb(37 99 235 / 0.28);
+  --focus-ring: 0 0 0 3px var(--focus-ring-color);
+
+  /* Layout */
+  --container-max-width: 1280px;
+  --header-height: 60px;
+}
