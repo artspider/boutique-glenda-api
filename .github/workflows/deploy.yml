@@ -1,0 +1,21 @@
+name: Deploy Boutique Glenda
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ejecutar deploy en servidor
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 157.230.52.21
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/boutique-glenda-api
+            ./deploy.sh all
