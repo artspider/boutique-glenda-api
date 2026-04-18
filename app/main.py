@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from app.db import base
 
 from app.api.sales import router as sales_router
@@ -16,13 +17,20 @@ app = FastAPI(
     version="0.1.0",
 )
 
-origins = [
-    "http://localhost:5173",
-]
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+
+if not origins:
+    origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    # Allow local Vite dev ports (5173, 5174, etc.) for localhost/127.0.0.1.
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1):\d+$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

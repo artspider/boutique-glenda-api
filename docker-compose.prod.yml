@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: boutique_glenda
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
 
   backend:
     build:
@@ -36,3 +38,5 @@ services:
 
 volumes:
   postgres_data:
+    external: true
+    name: boutique-glenda-api_boutique_glenda_postgres_data

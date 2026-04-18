@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -16,6 +16,7 @@ class InventoryMovement(Base):
     movement_type = Column(String(20), nullable=False)
     quantity = Column(Integer, nullable=False)
     reference = Column(String(255), nullable=True)
+    notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     product = relationship("Product")
