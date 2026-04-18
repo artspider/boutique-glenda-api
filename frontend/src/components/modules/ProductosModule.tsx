@@ -18,11 +18,9 @@ import ProductosResumen from './productos/ProductosResumen';
 import ProductosTable from './productos/ProductosTable';
 
 import {
-  cardStyle,
   colors,
-  primaryButtonStyle,
-  secondaryButtonStyle,
 } from './productos/styles';
+import { Alert, Button, Card, SectionHeader } from '../ui';
 
 import {
   initialFormData,
@@ -477,141 +475,58 @@ const ProductosModule: React.FC = () => {
       }}
     >
       {/* Encabezado */}
-      <div
-        style={{
-          ...cardStyle,
-          padding: 12,
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          background: colors.cardBg,
-        }}
-      >
-        <div>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 18,
-              lineHeight: 1.1,
-              color: colors.text,
-            }}
-          >
-            Productos
-          </h2>
+      <Card style={{ padding: 12 }}>
+        <SectionHeader
+          title="Productos"
+          subtitle="Catalogo, precios y stock."
+          actions={
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Button
+                onClick={() => {
+                  setSuccessMessage(null);
 
-          <p
-            style={{
-              margin: '4px 0 0 0',
-              fontSize: 12,
-              color: colors.textMuted,
-            }}
-          >
-            Catálogo, precios y stock.
-          </p>
-        </div>
+                  if (showForm && editingProductId === null) {
+                    setShowForm(false);
+                    setSaveErrorMessage(null);
+                  } else {
+                    setShowForm(true);
+                    setEditingProductId(null);
+                    setFormData(initialFormData);
+                    setFormErrors({});
+                    setSaveErrorMessage(null);
+                    setShowQuickCategoryForm(false);
+                    setCategoryQuickFormData(initialCategoryQuickFormData);
+                    setCategoryQuickFormErrors({});
+                  }
+                }}
+              >
+                {showForm && editingProductId === null ? 'Cancelar' : 'Nuevo producto'}
+              </Button>
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button
-            style={primaryButtonStyle}
-            onClick={() => {
-              setSuccessMessage(null);
-
-              if (showForm && editingProductId === null) {
-                setShowForm(false);
-                setSaveErrorMessage(null);
-              } else {
-                setShowForm(true);
-                setEditingProductId(null);
-                setFormData(initialFormData);
-                setFormErrors({});
-                setSaveErrorMessage(null);
-                setShowQuickCategoryForm(false);
-                setCategoryQuickFormData(initialCategoryQuickFormData);
-                setCategoryQuickFormErrors({});
-              }
-            }}
-          >
-            {showForm && editingProductId === null ? 'Cancelar' : 'Nuevo producto'}
-          </button>
-
-          <button
-            style={secondaryButtonStyle}
-            onClick={() => setShowInactive(!showInactive)}
-          >
-            {showInactive ? 'Ver activos' : 'Ver inactivos'}
-          </button>
-        </div>
-      </div>
+              <Button
+                variant="secondary"
+                onClick={() => setShowInactive(!showInactive)}
+              >
+                {showInactive ? 'Ver activos' : 'Ver inactivos'}
+              </Button>
+            </div>
+          }
+        />
+      </Card>
 
       {/* Mensaje de error de categorías */}
       {categoriesError && (
-        <div
-          style={{
-            ...cardStyle,
-            border: `1px solid ${colors.dangerBorder}`,
-            background: '#fffafa',
-            padding: 10,
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              color: colors.dangerText,
-              fontWeight: 700,
-            }}
-          >
-            {categoriesError}
-          </p>
-        </div>
+        <Alert tone="danger">{categoriesError}</Alert>
       )}
 
       {/* Mensaje de éxito */}
       {successMessage && (
-        <div
-          style={{
-            ...cardStyle,
-            border: `1px solid ${colors.successBg}`,
-            background: '#f0fdf4',
-            padding: 10,
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              color: colors.successText,
-              fontWeight: 700,
-            }}
-          >
-            {successMessage}
-          </p>
-        </div>
+        <Alert tone="success">{successMessage}</Alert>
       )}
 
       {/* Mensaje de error global */}
       {saveErrorMessage && (
-        <div
-          style={{
-            ...cardStyle,
-            border: `1px solid ${colors.dangerBorder}`,
-            background: '#fffafa',
-            padding: 10,
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              color: colors.dangerText,
-              fontWeight: 700,
-            }}
-          >
-            {saveErrorMessage}
-          </p>
-        </div>
+        <Alert tone="danger">{saveErrorMessage}</Alert>
       )}
 
       {/* Resumen */}
@@ -652,22 +567,16 @@ const ProductosModule: React.FC = () => {
 
       {/* Estado carga */}
       {loading && (
-        <div style={cardStyle}>
+        <Card>
           <p style={{ margin: 0, fontSize: 12, color: colors.textSoft }}>
             Cargando productos...
           </p>
-        </div>
+        </Card>
       )}
 
       {/* Estado error */}
       {error && !loading && (
-        <div
-          style={{
-            ...cardStyle,
-            border: `1px solid ${colors.dangerBorder}`,
-            background: '#fffafa',
-          }}
-        >
+        <Card>
           <p
             style={{
               margin: 0,
@@ -678,7 +587,7 @@ const ProductosModule: React.FC = () => {
           >
             {error}
           </p>
-        </div>
+        </Card>
       )}
 
       {/* Tabla */}

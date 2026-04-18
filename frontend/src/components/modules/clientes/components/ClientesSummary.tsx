@@ -1,15 +1,12 @@
 import React from 'react';
 import type { ClientesSummaryProps } from '../types';
 import {
-  cardStyle,
-  sectionHeaderStyle,
-  sectionTitleStyle,
-  metaTextStyle,
   summaryGridStyle,
   softCardStyle,
   summaryValueStyle,
   summaryLabelStyle,
 } from '../styles';
+import { Card, SectionHeader } from '../../../ui';
 
 /**
  * =========================================================
@@ -30,15 +27,12 @@ const ClientesSummary: React.FC<ClientesSummaryProps> = ({
   inactiveClientes,
 }) => {
   return (
-    <div style={cardStyle}>
-      <div style={sectionHeaderStyle}>
-        <div>
-          <h3 style={sectionTitleStyle}>Resumen de clientes</h3>
-          <p style={metaTextStyle}>
-            Vista rápida del estado actual de la cartera registrada.
-          </p>
-        </div>
-      </div>
+    <Card>
+      <SectionHeader
+        title="Resumen de clientes"
+        subtitle="Vista rapida del estado actual de la cartera registrada."
+        style={{ marginBottom: 10 }}
+      />
 
       <div style={summaryGridStyle}>
         <div style={softCardStyle}>
@@ -56,7 +50,7 @@ const ClientesSummary: React.FC<ClientesSummaryProps> = ({
           <p style={summaryLabelStyle}>Inactivos</p>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 

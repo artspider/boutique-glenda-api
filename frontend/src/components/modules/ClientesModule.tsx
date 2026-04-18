@@ -27,17 +27,8 @@ import {
 
 import {
   moduleContainerStyle,
-  moduleHeaderStyle,
-  titleBlockStyle,
-  titleStyle,
-  subtitleStyle,
-  primaryButtonStyle,
-  secondaryButtonStyle,
-  successAlertStyle,
-  errorAlertStyle,
-  cardStyle,
-  metaTextStyle,
 } from './clientes/styles';
+import { Alert, Button, Card, SectionHeader } from '../ui';
 
 /**
  * =========================================================
@@ -518,33 +509,29 @@ const ClientesModule: React.FC = () => {
   return (
     <div style={moduleContainerStyle}>
       {/* Encabezado principal del módulo */}
-      <div style={moduleHeaderStyle}>
-        <div style={titleBlockStyle}>
-          <h2 style={titleStyle}>Clientes</h2>
-          <p style={subtitleStyle}>
-            Administra clientes, consulta su estado y registra cambios rápidamente.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleToggleForm}
-          style={showForm ? secondaryButtonStyle : primaryButtonStyle}
-        >
-          {showForm ? 'Cancelar' : 'Nuevo cliente'}
-        </button>
-      </div>
+      <SectionHeader
+        title="Clientes"
+        subtitle="Administra clientes, consulta su estado y registra cambios rápidamente."
+        actions={
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
+            onClick={handleToggleForm}
+          >
+            {showForm ? 'Cancelar' : 'Nuevo cliente'}
+          </Button>
+        }
+      />
 
       {/* Feedback visual */}
       {feedback.type === 'success' ? (
-        <div style={successAlertStyle}>{feedback.message}</div>
+        <Alert tone="success">{feedback.message}</Alert>
       ) : null}
 
       {feedback.type === 'error' ? (
-        <div style={errorAlertStyle}>{feedback.message}</div>
+        <Alert tone="danger">{feedback.message}</Alert>
       ) : null}
 
-      {error ? <div style={errorAlertStyle}>{error}</div> : null}
+      {error ? <Alert tone="danger">{error}</Alert> : null}
 
       {/* Resumen */}
       <ClientesSummary
@@ -576,9 +563,16 @@ const ClientesModule: React.FC = () => {
 
       {/* Tabla */}
       {loading ? (
-        <div style={cardStyle}>
-          <p style={metaTextStyle}>Cargando clientes...</p>
-        </div>
+        <Card>
+          <p
+            style={{
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            Cargando clientes...
+          </p>
+        </Card>
       ) : (
         <ClientesTable
           clientes={paginatedClientes}
