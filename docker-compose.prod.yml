@@ -38,5 +38,4 @@ services:
 
 volumes:
   postgres_data:
-    external: true
-    name: boutique-glenda-api_boutique_glenda_postgres_data
+
