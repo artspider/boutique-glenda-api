@@ -15,6 +15,7 @@ import StatusBadge from '../dashboard/StatusBadge';
 import AlertList from '../dashboard/AlertList';
 import FeaturedProductCard from '../dashboard/FeaturedProductCard';
 import MessageList from '../dashboard/MessageList';
+import { Alert, SectionHeader } from '../ui';
 
 const DashboardModule: React.FC = () => {
   const [activeCredits, setActiveCredits] = useState<Credit[]>([]);
@@ -183,16 +184,19 @@ const DashboardModule: React.FC = () => {
   ];
 
   if (loading) {
-    return <p>Cargando dashboard...</p>;
+    return <Alert tone="info">Cargando dashboard...</Alert>;
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return <Alert tone="danger">{error}</Alert>;
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <h2 style={{ margin: 0 }}>Dashboard de cobranza</h2>
+      <SectionHeader
+        title="Dashboard de cobranza"
+        subtitle="Resumen financiero y operativo del estado de cobranza."
+      />
 
       <div
         style={{

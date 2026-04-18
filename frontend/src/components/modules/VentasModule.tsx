@@ -5,6 +5,7 @@ import { getProducts } from '../../services/productService';
 import type { Product } from '../../services/productService';
 import { createSale } from '../../services/saleService';
 import SalesSectionCard from './sales/SalesSectionCard';
+import { Alert, Button, SectionHeader } from '../ui';
 
 /* =========================================================
    TIPOS DEL MÓDULO
@@ -234,6 +235,13 @@ const VentasModule: React.FC = () => {
     quantity: '',
     credit: '',
   });
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({
+    type: null,
+    message: '',
+  });
 
   const [isMobileModule, setIsMobileModule] = useState(false);
 
@@ -323,6 +331,7 @@ const VentasModule: React.FC = () => {
   };
 
   const handleAddToCart = () => {
+    setFeedback({ type: null, message: '' });
     const product = getProductById(productForm.product_id);
 
     setFormErrors((prev) => ({
@@ -440,6 +449,8 @@ const VentasModule: React.FC = () => {
   const handleCreateSale = async () => {
     if (!validateForm()) return;
 
+    setFeedback({ type: null, message: '' });
+
     try {
       const items = cartItems.map((item) => {
         const selectedCartProduct = getProductById(item.product_id);
@@ -477,10 +488,16 @@ const VentasModule: React.FC = () => {
       setCartItems([]);
       resetProductForm();
 
-      alert('Venta registrada correctamente');
+      setFeedback({
+        type: 'success',
+        message: 'Venta registrada correctamente.',
+      });
       await fetchData();
     } catch {
-      alert('Error al registrar venta');
+      setFeedback({
+        type: 'error',
+        message: 'Error al registrar venta.',
+      });
     }
   };
 
@@ -490,17 +507,22 @@ const VentasModule: React.FC = () => {
 
   return (
     <div style={styles.page}>
-      {loading && (
-        <div style={styles.infoBox}>
-          <p style={{ margin: 0, color: '#475569', fontSize: '0.9rem' }}>Cargando datos...</p>
-        </div>
-      )}
+      <SectionHeader
+        title="Ventas"
+        subtitle="Registra ventas, productos y planes de pago desde un solo flujo."
+      />
 
-      {error && (
-        <div style={styles.errorBox}>
-          <p style={{ margin: 0, color: '#b91c1c', fontSize: '0.9rem' }}>{error}</p>
-        </div>
-      )}
+      {feedback.type === 'success' ? (
+        <Alert tone="success">{feedback.message}</Alert>
+      ) : null}
+
+      {feedback.type === 'error' ? (
+        <Alert tone="danger">{feedback.message}</Alert>
+      ) : null}
+
+      {loading && <Alert tone="info">Cargando datos...</Alert>}
+
+      {error && <Alert tone="danger">{error}</Alert>}
 
       {!loading && !error && (
         <div
@@ -700,9 +722,9 @@ const VentasModule: React.FC = () => {
                       )}
                     </div>
 
-                    <button type="button" onClick={handleAddToCart} style={styles.primaryButton}>
+                    <Button type="button" onClick={handleAddToCart}>
                       Agregar al carrito
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -818,13 +840,15 @@ const VentasModule: React.FC = () => {
                             </strong>
 
                             <div style={{ marginTop: '0.6rem' }}>
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => handleRemoveCartItem(index)}
+                                variant="danger"
+                                size="sm"
                                 style={styles.dangerButton}
                               >
                                 Quitar
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -1037,16 +1061,14 @@ const VentasModule: React.FC = () => {
     )}
 
     <div style={{ marginTop: '0.2rem' }}>
-      <button
+      <Button
         type="button"
         onClick={handleCreateSale}
-        style={{
-          ...styles.primaryButton,
-          width: '100%',
-        }}
+        fullWidth
+        style={styles.primaryButton}
       >
         Registrar venta
-      </button>
+      </Button>
     </div>
   </div>
 </SalesSectionCard>

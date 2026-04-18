@@ -19,6 +19,7 @@ import PagosSummaryCards from './ui/PagosSummaryCards';
 import PagosHistoryTable from './ui/PagosHistoryTable';
 import PagosRegisterForm from './ui/PagosRegisterForm';
 import PagosCreditSummary from './ui/PagosCreditSummary';
+import { Alert } from '../ui';
 
 
 const PagosModule: React.FC = () => {
@@ -42,6 +43,10 @@ const PagosModule: React.FC = () => {
   });
 
   const [customerSearch, setCustomerSearch] = useState('');
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | null; message: string }>({
+    type: null,
+    message: '',
+  });
 
   const fetchCredits = async () => {
     try {
@@ -191,6 +196,8 @@ const PagosModule: React.FC = () => {
   const handleRegisterPayment = async () => {
     if (!validateForm()) return;
 
+    setFeedback({ type: null, message: '' });
+
     try {
       await registerPayment({
         credit_id: Number(formData.credit_id),
@@ -205,11 +212,17 @@ const PagosModule: React.FC = () => {
         amount: '',
       });
 
-      alert('Pago registrado correctamente');
+      setFeedback({
+        type: 'success',
+        message: 'Pago registrado correctamente.',
+      });
       await fetchCredits();
       await fetchPaymentsByCredit(paidCreditId);
     } catch {
-      alert('Error al registrar pago');
+      setFeedback({
+        type: 'error',
+        message: 'Error al registrar pago.',
+      });
     }
   };
 
@@ -276,6 +289,14 @@ const PagosModule: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {feedback.type === 'success' ? (
+        <Alert tone="success">{feedback.message}</Alert>
+      ) : null}
+
+      {feedback.type === 'error' ? (
+        <Alert tone="danger">{feedback.message}</Alert>
+      ) : null}
+
       <DashboardPanel title="">
         <p style={{ marginTop: 0, marginBottom: '0.75rem' }}>
           {selectedCredit
