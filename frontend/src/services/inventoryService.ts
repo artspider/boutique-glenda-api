@@ -95,21 +95,38 @@ function buildHeaders(): HeadersInit {
 
 async function parseError(response: Response): Promise<string> {
   try {
-    const data = await response.json();
-    if (typeof data?.detail === 'string' && data.detail.trim()) {
-      return data.detail;
+    const rawBody = await response.text();
+    if (!rawBody.trim()) {
+      return 'No se pudo completar la operación.';
     }
-    if (typeof data?.message === 'string' && data.message.trim()) {
-      return data.message;
-    }
-  } catch {
-    const text = await response.text();
-    if (text.trim()) {
-      return text;
-    }
-  }
 
-  return 'No se pudo completar la operación.';
+    let data: unknown = null;
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      return rawBody;
+    }
+
+    const detail =
+      typeof data === 'object' && data !== null && 'detail' in data
+        ? (data as { detail?: unknown }).detail
+        : null;
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail;
+    }
+
+    const message =
+      typeof data === 'object' && data !== null && 'message' in data
+        ? (data as { message?: unknown }).message
+        : null;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+
+    return rawBody;
+  } catch {
+    return 'No se pudo completar la operación.';
+  }
 }
 
 export async function getInventoryItems(includeInactive = true): Promise<InventoryItem[]> {
