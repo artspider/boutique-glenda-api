@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ejecutar deploy en servidor
+      - name: Generar versión
+        id: version
+        run: echo "VERSION=v1.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Deploy en servidor
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: 157.230.52.21
@@ -18,4 +22,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /root/boutique-glenda-api
-            ./deploy.sh all
+            git pull
+            ./deploy.sh ${{ steps.version.outputs.VERSION }}
